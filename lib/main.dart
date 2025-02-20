@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:spring_admin/screens/home.dart';
+import 'package:spring_admin/screens/home/home.dart';
 import 'package:spring_admin/utils/routes/routes.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -33,6 +33,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       onGenerateRoute: AppRoutes.generateRoute,
       initialRoute: HomeScreen.routeName,
     );

@@ -28,11 +28,11 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
 
     try {
       final response = await http.post(
-
         Uri.parse('${ServerEndpoints.scanQr()}?user_id=${int.parse(_userIdController.text.toString())}'),
         headers: {
           'Content-Type': 'application/json',
-        },body: json.encode({
+        },
+        body: json.encode({
           'user_id': _userIdController.text.trim(),
         }),
       );
@@ -42,12 +42,12 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
       final data = json.decode(response.body);
       
       if (response.statusCode == 200) {
-Navigator.pushReplacementNamed(
-        context,
-        FaceVerificationScreen.routeName,
-        arguments: int.tryParse(_userIdController.text),
-      );      } else {
-        // Show error overlay with specific message from server
+        Navigator.pushReplacementNamed(
+          context,
+          FaceVerificationScreen.routeName,
+          arguments: int.tryParse(_userIdController.text),
+        );
+      } else {
         setState(() {
           error = data['error'] ?? 'Failed to verify user';
           _showErrorOverlay();
@@ -190,124 +190,218 @@ Navigator.pushReplacementNamed(
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios, color: Color(0xFF1a237e)),
+          onPressed: () => Navigator.pop(context),
+        ),
         title: const Text(
           'Manual Entry',
           style: TextStyle(
+            color: Color(0xFF1a237e),
             fontWeight: FontWeight.w600,
-            color: Colors.white,
+            fontSize: 20,
           ),
-        ),
-        backgroundColor: const Color(0xFF2C3E50),
-        elevation: 0,
-        leading: IconButton(
-          onPressed: () => Navigator.pop(context),
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
         ),
       ),
       body: SingleChildScrollView(
+        child: Column(
+          children: [
+            _buildHeaderCard(),
+            Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                 
+                    _buildUserIdField(),
+                    const SizedBox(height: 24),
+                    _buildSubmitButton(),
+                                        const SizedBox(height: 24),
+
+                       _buildInstructionsCard(),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeaderCard() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      child: Card(
+        elevation: 2,
+        color: const Color(0xFFF8F9FC),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(color: Colors.grey.shade200),
+        ),
         child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Header
-                const Text(
-                  'Verify Guest',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF2C3E50),
-                  ),
+          padding: const EdgeInsets.all(20),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1a237e).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Please enter the guest USER ID below',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey,
-                  ),
+                child: const Icon(
+                  Icons.person_search,
+                  color: Color(0xFF1a237e),
+                  size: 32,
                 ),
-                const SizedBox(height: 32),
-
-                // Name Field
-                TextFormField(
-                  controller: _userIdController,
-                  decoration: InputDecoration(
-                    labelText: 'User ID',
-                    prefixIcon: const Icon(Icons.person),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
-                    ),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Please enter guest name';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 20),
-
-                // Email Field
-              
-                // Error Message
-                if (error != null)
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.red.shade50,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      error!,
-                      style: TextStyle(color: Colors.red.shade900),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                const SizedBox(height: 20),
-
-                // Submit Button
-                SizedBox(
-                  height: 50,
-                  child: ElevatedButton(
-                    onPressed: isLoading ? null : _submitForm,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF2C3E50),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+              ),
+              const SizedBox(width: 16),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Manual Verification',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1a237e),
                       ),
                     ),
-                    child: isLoading
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor:
-                                  AlwaysStoppedAnimation<Color>(Colors.white),
-                            ),
-                          )
-                        : const Text(
-                            'Add Guest',
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                  ),
+                    SizedBox(height: 4),
+                    Text(
+                      'Enter guest ID to proceed',
+                      style: TextStyle(
+                        color: Color(0xFF424242),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildInstructionsCard() {
+    return Card(
+      elevation: 0,
+      color: const Color(0xFF1a237e).withOpacity(0.05),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Icon(
+              Icons.info_outline,
+              color: const Color(0xFF1a237e).withOpacity(0.7),
+            ),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Text(
+                'Please enter the guest\'s User ID to verify their identity',
+                style: TextStyle(
+                  color: Color(0xFF424242),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildUserIdField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'User ID',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF1a237e),
+          ),
+        ),
+        const SizedBox(height: 8),
+        TextFormField(
+          controller: _userIdController,
+          keyboardType: TextInputType.number,
+          decoration: InputDecoration(
+            hintText: 'Enter User ID',
+            prefixIcon: const Icon(Icons.person_outline, color: Color(0xFF1a237e)),
+            filled: true,
+            fillColor: Colors.grey.shade50,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey.shade200),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey.shade200),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFF1a237e)),
+            ),
+          ),
+          validator: (value) {
+            if (value == null || value.trim().isEmpty) {
+              return 'Please enter User ID';
+            }
+            if (int.tryParse(value) == null) {
+              return 'Please enter a valid number';
+            }
+            return null;
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSubmitButton() {
+    return SizedBox(
+      height: 50,
+      child: ElevatedButton(
+        onPressed: isLoading ? null : _submitForm,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFF1a237e),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          elevation: 2,
+        ),
+        child: isLoading
+            ? const SizedBox(
+                height: 20,
+                width: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              )
+            : const Text(
+                'Verify Guest',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
       ),
     );
   }

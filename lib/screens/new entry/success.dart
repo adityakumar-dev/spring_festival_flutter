@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:spring_admin/screens/home.dart';
+import 'package:spring_admin/screens/home/home.dart';
 
 class SuccessScreen extends StatefulWidget {
   static const String routeName = '/success';

@@ -5,7 +5,7 @@ class ServerEndpoints {
   // User Management Endpoints
   static String createUser() => '$baseUrl/create_user';
   static String getUsers() => '$baseUrl/users';
-  static String getUserById(int userId) => '$baseUrl/users/$userId';
+  static String getUserById(int userId, bool isQuickRegister) => '$baseUrl/users/$userId?is_quick_register=$isQuickRegister';
   
   // QR Code Related Endpoints
   static String getQrCode(int userId) => '$baseUrl/qr_code/$userId';
@@ -24,6 +24,13 @@ class ServerEndpoints {
         .map((e) => '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value.toString())}')
         .join('&');
     return '$url?$queryString';
+  }
+
+  static String storeFaceImage() {
+    return '$baseUrl/store-face-image';  // Adjust the endpoint path as needed
+  }
+  static String quickRegister() {
+    return '$baseUrl/quick-register';
   }
 }
 

@@ -2,13 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:page_transition/page_transition.dart';
 import 'package:spring_admin/screens/new%20entry/face_verification.dart';
 import 'package:spring_admin/screens/new%20entry/qr_code_verify.dart';
+// import 'package:spring_admin/screens/registration/quick_registration.dart';
 
-import '../../screens/home.dart';
+import '../../screens/home/home.dart';
 import '../../screens/quick_register.dart';
 import '../../screens/settings.dart';
 import '../../screens/help.dart';
-import '../../screens/guest_list.dart';
-import '../../screens/new_entry.dart';
+import '../../screens/guest list/guest_list.dart';
+import '../../screens/new entry/new_entry.dart';
 import '../../screens/analytics.dart';
 import '../../screens/new entry/success.dart';
 import '../../screens/guest list/view_guest.dart';
@@ -38,11 +39,18 @@ class AppRoutes {
       case SuccessScreen.routeName:
         return MaterialPageRoute(builder: (_) => const SuccessScreen());
       case ViewGuestScreen.routeName:
+        // Cast arguments to Map<String, dynamic>
+        final args = settings.arguments as Map<String, dynamic>;
         return MaterialPageRoute(
-          builder: (_) => ViewGuestScreen(userId: settings.arguments as int),
+          builder: (_) => ViewGuestScreen(
+            userId: args['userId'] as int,
+            isQuickRegister: args['isQuickRegister'] as bool,
+          ),
         );
       case ManualEntryScreen.routeName:
         return MaterialPageRoute(builder: (_) => const ManualEntryScreen());
+      // case QuickRegistration.routeName:
+      //   return MaterialPageRoute(builder: (_) => const QuickRegistration());
       default:
         return MaterialPageRoute(builder: (_) => Container());
     }

@@ -82,6 +82,7 @@ class _QrCodeVerifyScreenState extends State<QrCodeVerifyScreen> {
 
       // If successful, navigate to face verification
       if (!mounted) return;
+      controller.dispose();
       Navigator.pushReplacementNamed(
         context,
         FaceVerificationScreen.routeName,
