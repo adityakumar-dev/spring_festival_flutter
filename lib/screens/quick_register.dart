@@ -7,7 +7,6 @@ import 'package:spring_admin/providers/camera_settings_provider.dart';
 import 'package:spring_admin/screens/camer_capture_screen.dart';
 import '../utils/constants/server_endpoints.dart';
 import 'package:http/http.dart' as http;
-import 'dart:convert';
 
 class QuickRegisterScreen extends StatefulWidget {
   static const String routeName = '/quickRegister';
@@ -59,11 +58,17 @@ class _QuickRegisterScreenState extends State<QuickRegisterScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    _buildPhotoSection(cameraProvider),
+                    Card(
+                   color: Colors.white,
+                      child: Padding(
+                        padding:  const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+                        child: _buildPhotoSection(cameraProvider),
+                      )),
                     const SizedBox(height: 24),
                     _buildInputField(
                       controller: _nameController,
                       label: 'Full Name',
+            helperText: "Guest Name",                      
                       icon: Icons.person_outline,
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
@@ -76,6 +81,7 @@ class _QuickRegisterScreenState extends State<QuickRegisterScreen> {
                     _buildInputField(
                       controller: _emailController,
                       label: 'Email Address',
+                      helperText: "Guest Email Address",
                       icon: Icons.email_outlined,
                       keyboardType: TextInputType.emailAddress,
                       validator: (value) {
@@ -92,6 +98,7 @@ class _QuickRegisterScreenState extends State<QuickRegisterScreen> {
                     _buildInputField(
                       controller: _aadharController,
                       label: 'Aadhar Number',
+                      helperText: "Guest Aadhar Number",
                       icon: Icons.credit_card,
                       keyboardType: TextInputType.number,
                       maxLength: 12,
@@ -106,7 +113,7 @@ class _QuickRegisterScreenState extends State<QuickRegisterScreen> {
                       },
                     ),
                     if (error != null) _buildErrorMessage(),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 12),
                     _buildSubmitButton(cameraProvider),
                   ],
                 ),
@@ -273,6 +280,7 @@ Widget _buildPhotoSection(CameraSettingsProvider cameraProvider) {
     TextInputType? keyboardType,
     int? maxLength,
     String? Function(String?)? validator,
+    String? helperText,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -293,6 +301,9 @@ Widget _buildPhotoSection(CameraSettingsProvider cameraProvider) {
           decoration: InputDecoration(
             prefixIcon: Icon(icon, color: const Color(0xFF1a237e)),
             filled: true,
+            // helperText: helperText,
+            labelText: helperText,
+            labelStyle: TextStyle(color: Colors.grey.shade600, fontSize: 12),
             fillColor: Colors.grey.shade50,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),

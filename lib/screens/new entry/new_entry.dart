@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:spring_admin/screens/new%20entry/manual_entry.dart';
 import 'package:spring_admin/screens/new%20entry/qr_code_verify.dart';
-import 'package:spring_admin/utils/ui/new%20entry/entry_options_card.dart';
 import 'package:spring_admin/utils/ui/new%20entry/quick_entry_dailog.dart';
 import 'package:spring_admin/utils/ui/new%20entry/show_emergency_dialog.dart';
 
@@ -60,7 +59,7 @@ class NewEntryScreen extends StatelessWidget {
                   const SizedBox(height: 16),
                   const _SpecialEntryOptions(),
                   const SizedBox(height: 24),
-                  _buildRecentEntriesSection(),
+                  // _buildRecentEntriesSection(),
                 ],
               ),
             ),

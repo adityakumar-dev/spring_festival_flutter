@@ -16,7 +16,7 @@ Widget buildErrorOverlay(String error, Function() onRetry) {
               ),
               const SizedBox(height: 16),
               Text(
-                error!,
+                error,
                 style: const TextStyle(color: Colors.white, fontSize: 16),
                 textAlign: TextAlign.center,
               ),

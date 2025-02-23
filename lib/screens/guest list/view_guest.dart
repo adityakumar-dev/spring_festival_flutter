@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../../utils/constants/server_endpoints.dart';
@@ -39,13 +40,17 @@ class _ViewGuestScreenState extends State<ViewGuestScreen> {
 
       if (response.statusCode == 200) {
         setState(() {
-          guestData = json.decode(response.body);
+          // Fluttertoast.showToast(msg: response.body);
+          guestData = json.decode(response.body) as Map<String, dynamic>?;
+          debugPrint(guestData.toString());
           isLoading = false;
         });
       } else {
         throw Exception('Failed to load guest details');
       }
     } catch (e) {
+      debugPrint(e.toString());
+      Fluttertoast.showToast(msg: 'Failed to load guest details');
       setState(() {
         error = e.toString();
         isLoading = false;
@@ -66,13 +71,24 @@ class _ViewGuestScreenState extends State<ViewGuestScreen> {
       );
     }
 
+    if (guestData == null) {
+      return const Scaffold(
+        backgroundColor: Colors.white,
+        body: Center(
+          child: Text('No guest data available'),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: const Color(0xFF1a237e),
         elevation: 0,
         title: Text(
-          guestData?['user']['name'] ?? 'Guest',
+          guestData!['user'] != null
+              ? guestData!['user']['name'] ?? 'Guest'
+              : 'Guest',
           style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.w600,
@@ -137,7 +153,9 @@ class _ViewGuestScreenState extends State<ViewGuestScreen> {
                 ),
                 child: Padding(
                   padding: const EdgeInsets.all(16),
-                  child: _buildUserInfo(guestData!['user']),
+                  child: guestData!['user'] != null
+                      ? _buildUserInfo(guestData!['user'])
+                      : const Text('User data not available'),
                 ),
               ),
             ),

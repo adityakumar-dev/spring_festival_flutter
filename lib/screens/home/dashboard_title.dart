@@ -1,35 +1,36 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 
 Widget buildDashboardTile(
-    BuildContext context,
-    String title,
-    String subtitle,
-    IconData icon,
-    Color color,
-    VoidCallback onPressed,
-  ) {
-    final size = MediaQuery.of(context).size;
-    final isTablet = size.width > 600;
-    
-    return Card(
-      elevation: 8,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: InkWell(
-        onTap: onPressed,
-        borderRadius: BorderRadius.circular(20),
+  BuildContext context,
+  String title,
+  String subtitle,
+  IconData icon,
+  Color color,
+  VoidCallback onPressed,
+) {
+  final size = MediaQuery.of(context).size;
+  final isTablet = size.width > 600;
+
+  return InkWell(
+    onTap: onPressed,
+    borderRadius: BorderRadius.circular(20),
+    child: ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
         child: Container(
           decoration: BoxDecoration(
+            color: Color.fromARGB(255, 10, 128, 120).withOpacity(0.2),
+            // color: color.withOpacity(0.4), // Semi-transparent color overlay
             borderRadius: BorderRadius.circular(20),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                color,
-                color.withOpacity(0.8),
-              ],
-            ),
+            boxShadow: [
+              BoxShadow(
+                blurRadius: 10,
+                offset: Offset(0, 5),
+                color: Colors.black.withOpacity(0.1),
+              ),
+            ],
           ),
           child: Padding(
             padding: EdgeInsets.all(size.width * 0.03),
@@ -61,7 +62,7 @@ Widget buildDashboardTile(
                     subtitle,
                     style: TextStyle(
                       fontSize: isTablet ? 14 : 12,
-                      color: Colors.white.withOpacity(0.8),
+                      color: Color.fromARGB(255, 10, 128, 120),
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -71,5 +72,6 @@ Widget buildDashboardTile(
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}

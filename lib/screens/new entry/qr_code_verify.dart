@@ -39,7 +39,7 @@ class _QrCodeVerifyScreenState extends State<QrCodeVerifyScreen> {
 
   Future<void> _onDetect(BarcodeCapture capture) async {
     if (isProcessing || error != null) return;
-    
+
     final List<Barcode> barcodes = capture.barcodes;
     if (barcodes.isEmpty) return;
 
@@ -57,7 +57,7 @@ class _QrCodeVerifyScreenState extends State<QrCodeVerifyScreen> {
       // Try to parse the QR code data as JSON
       final Map<String, dynamic> qrData = json.decode(code);
       debugPrint("Parsed QR data: $qrData");
-      
+
       // Extract user_id from QR code
       final userId = qrData['user_id'];
       Fluttertoast.showToast(msg: "userId: $userId");
@@ -68,27 +68,31 @@ class _QrCodeVerifyScreenState extends State<QrCodeVerifyScreen> {
 
       // Verify QR code with server
       final response = await http.post(
-        Uri.parse('${ServerEndpoints.scanQr()}?user_id=${int.parse(userId.toString())}'),
+        Uri.parse(
+          '${ServerEndpoints.scanQr()}?user_id=${int.parse(userId.toString())}',
+        ),
         headers: {
           'Content-Type': 'application/json',
         },
       );
-
-      final responseData = json.decode(response.body);
-      
-      if (response.statusCode != 200) {
-        throw Exception(responseData['error'] ?? 'Failed to verify QR code');
+      if (response.statusCode == 200) {
+        if (!mounted) return;
+        controller.dispose();
+        Navigator.pushReplacementNamed(
+          context,
+          FaceVerificationScreen.routeName,
+          arguments: userId,
+        );
+      } else {
+        final responseData = json.decode(response.body);
+        Fluttertoast.showToast(msg: responseData.toString());
+        if (response.statusCode != 200) {
+          throw Exception(responseData['error']);
+        }
       }
-
+      // Fluttertoast.showToast(msg: response.body.runtimeType.toString());
+      // final responseData = json.decode(response.body);
       // If successful, navigate to face verification
-      if (!mounted) return;
-      controller.dispose();
-      Navigator.pushReplacementNamed(
-        context,
-        FaceVerificationScreen.routeName,
-        arguments: userId,
-      );
-
     } catch (e) {
       log('QR Scan error: $e');
       setState(() {
@@ -118,7 +122,8 @@ class _QrCodeVerifyScreenState extends State<QrCodeVerifyScreen> {
                       onPressed: () => controller.toggleTorch(),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.flip_camera_ios, color: Colors.white),
+                      icon: const Icon(Icons.flip_camera_ios,
+                          color: Colors.white),
                       onPressed: () => controller.switchCamera(),
                     ),
                   ],

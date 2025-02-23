@@ -31,7 +31,7 @@ class _GuestListsScreenState extends State<GuestListsScreen> {
         error = null;
       });
 
-      final response = await http.get(
+      final response = await http.post(
         Uri.parse('${ServerEndpoints.getUsers()}?user_type=$selectedFilter'),
       );
 
@@ -293,14 +293,17 @@ class _GuestListsScreenState extends State<GuestListsScreen> {
               style: TextStyle(color: Colors.grey[600]),
             ),
             trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-            onTap: () => Navigator.pushNamed(
+            onTap: (){ 
+              // Fluttertoast.showToast(msg: 'Guest ID: ${guest['id']}');
+              Navigator.pushNamed(
               context,
               ViewGuestScreen.routeName,
               arguments: {
                 'userId': guest['id'],
                 'isQuickRegister': isQuickRegister,
               },
-            ),
+            );
+            },
           ),
         );
       },

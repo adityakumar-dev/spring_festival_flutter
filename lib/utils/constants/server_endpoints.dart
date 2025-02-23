@@ -4,12 +4,12 @@ class ServerEndpoints {
 
   // User Management Endpoints
   static String createUser() => '$baseUrl/create_user';
-  static String getUsers() => '$baseUrl/users';
+  static String getUsers() => '$baseUrl/users/all';
   static String getUserById(int userId, bool isQuickRegister) => '$baseUrl/users/$userId?is_quick_register=$isQuickRegister';
   
   // QR Code Related Endpoints
-  static String getQrCode(int userId) => '$baseUrl/qr_code/$userId';
-  static String scanQr() => '$baseUrl/qr_scans/verify';
+  static String getQrCode(int userId) => '$baseUrl/qr/$userId';
+  static String scanQr() => '$baseUrl/qr/scan_qr';
   static String getQrHistory(int userId) => '$baseUrl/qr_scans/$userId';
   
   // Face Recognition Endpoints

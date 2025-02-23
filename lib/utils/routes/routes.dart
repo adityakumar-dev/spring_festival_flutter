@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:page_transition/page_transition.dart';
+import 'package:spring_admin/screens/login/login.dart';
 import 'package:spring_admin/screens/new%20entry/face_verification.dart';
 import 'package:spring_admin/screens/new%20entry/qr_code_verify.dart';
+import 'package:spring_admin/screens/splash/splash_screen.dart';
 // import 'package:spring_admin/screens/registration/quick_registration.dart';
 
 import '../../screens/home/home.dart';
@@ -49,6 +51,10 @@ class AppRoutes {
         );
       case ManualEntryScreen.routeName:
         return MaterialPageRoute(builder: (_) => const ManualEntryScreen());
+      case SplashScreen.routeName:
+        return MaterialPageRoute(builder: (_) => const SplashScreen());
+      case LoginScreen.routeName:
+        return MaterialPageRoute(builder: (_) => const LoginScreen());
       // case QuickRegistration.routeName:
       //   return MaterialPageRoute(builder: (_) => const QuickRegistration());
       default:
