@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "199589356057",
+    "firebase_url": "https://visitor-management-bbd7c-default-rtdb.firebaseio.com",
+    "project_id": "visitor-management-bbd7c",
+    "storage_bucket": "visitor-management-bbd7c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:199589356057:android:1619790cb2e0e38f568088",
+        "android_client_info": {
+          "package_name": "com.example.spring_admin"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA60C0V0IrG3-Eu9OY0Xxc_Bx36dLPPvwc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
