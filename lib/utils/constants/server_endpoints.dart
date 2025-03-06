@@ -1,6 +1,6 @@
 class ServerEndpoints {
   // Base URL
-  static const String baseUrl = 'https://valid-uncommon-orca.ngrok-free.app';
+  static const String baseUrl = 'https://api.vmsbutu.it.com';
 
 
   static String getGroupVerify() => '$baseUrl/face_recognition/group_entry';

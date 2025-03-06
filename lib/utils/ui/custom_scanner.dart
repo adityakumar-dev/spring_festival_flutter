@@ -43,7 +43,10 @@ class _CustomScannerState extends State<CustomScanner> {
   Future<void> handleQRScan(String code) async {
     if (hasScanned) return;
     hasScanned = true;
-    bool isLoading = false;
+    
+    setState(() {
+      isProcessing = true;  // Set loading state
+    });
     
     try {
       if (code.isEmpty) {
@@ -72,12 +75,6 @@ class _CustomScannerState extends State<CustomScanner> {
       // For exit operation
       if (!mounted) return;
       
-      // Show loading dialog
-      setState(() {
-        isLoading = true;
-      });
-      
-      if (!mounted) return;
       final appUserManager = Provider.of<AppUserManager>(context, listen: false);
       final appUserToken = await appUserManager.getAppUserToken();
       
@@ -143,7 +140,7 @@ class _CustomScannerState extends State<CustomScanner> {
       // Always cleanup
       if (mounted) {
         setState(() {
-          isLoading = false;
+          isProcessing = false;  // Reset loading state
         });
       }
       controller.stop();
@@ -165,13 +162,30 @@ class _CustomScannerState extends State<CustomScanner> {
             },
           ),
           _buildOverlay(),
-          // Show loading indicator as part of the main UI
-          if (isProcessing)
+          if (isProcessing)  // Show loading overlay when processing
             Container(
               color: Colors.black54,
-              child: const Center(
-                child: CircularProgressIndicator(
-                  color: Colors.white,
+              width: double.infinity,
+              height: double.infinity,
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const CircularProgressIndicator(
+                      color: Colors.white,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      widget.operationType == 'entry' 
+                        ? 'Processing entry...' 
+                        : 'Processing exit...',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),

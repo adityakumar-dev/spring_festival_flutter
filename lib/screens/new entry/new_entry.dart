@@ -388,9 +388,14 @@ class _StandardEntryOptions extends StatelessWidget {
   }
 }
 
-class _SpecialEntryOptions extends StatelessWidget {
+class _SpecialEntryOptions extends StatefulWidget {
   const _SpecialEntryOptions();
 
+  @override
+  State<_SpecialEntryOptions> createState() => _SpecialEntryOptionsState();
+}
+
+class _SpecialEntryOptionsState extends State<_SpecialEntryOptions> {
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -403,128 +408,15 @@ class _SpecialEntryOptions extends StatelessWidget {
           () => _showQuickEntryDialog(context),
         ),
         const SizedBox(height: 12),
-        _buildOptionCard(
-          'Group Entry',
-          'Multiple guests at once',
-          Icons.group_add,
-          const Color(0xFF1a237e),
-          () {
-            showModalBottomSheet(
-              context: context,
-              isScrollControlled: true,
-              shape: const RoundedRectangleBorder(
-                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-              ),
-              builder: (context) {
-                TextEditingController controller = TextEditingController();
-                return Container(
-                  padding: EdgeInsets.only(
-                    bottom: MediaQuery.of(context).viewInsets.bottom,
-                    top: 20,
-                    left: 16,
-                    right: 16,
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Group Entry',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF1A237E),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      TextField(
-                        controller: controller,
-                        decoration: InputDecoration(
-                          filled: true,
-                          fillColor: cardBgColor,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
-                          ),
-                          suffixIcon: IconButton(
-                            onPressed: () async {
-                              String? id = await Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder:
-                                      (context) =>
-                                          CustomScanner(operationType: 'entry'),
-                                ),
-                              );
-                              Fluttertoast.showToast(msg: 'Id is : $id');
-                              if (id != null) {
-
-                                controller.text = id;
-                              } else {
-                                Fluttertoast.showToast(
-                                  msg: 'User ID not found',
-                                  backgroundColor: accentRed,
-                                );
-                              }
-                            },
-                            icon: const Icon(
-                              Icons.qr_code_scanner,
-                              color: primaryColor,
-                            ),
-                          ),
-                          hintText: 'Enter user ID',
-                          hintStyle: const TextStyle(color: secondaryTextColor),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: () {
-                            // Navigator.pop(context);
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder:
-                                    (context) => StudentListScreen(
-                                      userId: controller.text,
-                                    ),
-                              ),
-                            );
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: primaryColor,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          child: const Text(
-                            'Submit',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                    ],
-                  ),
-                );
-              },
-            );
-          },
-        ),
-        const SizedBox(height: 12),
-        _buildOptionCard(
-          'Emergency Entry',
-          'Immediate access with logging',
-          Icons.warning_rounded,
-          const Color(0xFF1a237e),
-          () => showEmergencyEntryDialog(context),
-        ),
+        
+        // const SizedBox(height: 12),
+        // _buildOptionCard(
+        //   'Emergency Entry',
+        //   'Immediate access with logging',
+        //   Icons.warning_rounded,
+        //   const Color(0xFF1a237e),
+        //   () => showEmergencyEntryDialog(context),
+        // ),
       ],
     );
   }
@@ -537,6 +429,117 @@ class _SpecialEntryOptions extends StatelessWidget {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) => QuickEntryBottomSheet(),
+    );
+  }
+}
+
+// First, create a new StatefulWidget for the bottom sheet
+class GroupEntryBottomSheet extends StatefulWidget {
+  const GroupEntryBottomSheet({super.key});
+
+  @override
+  State<GroupEntryBottomSheet> createState() => _GroupEntryBottomSheetState();
+}
+
+class _GroupEntryBottomSheetState extends State<GroupEntryBottomSheet> {
+  final TextEditingController controller = TextEditingController();
+
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+        top: 20,
+        left: 16,
+        right: 16,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Group Entry',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF1A237E),
+            ),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: controller,
+            decoration: InputDecoration(
+              filled: true,
+              fillColor: cardBgColor,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+              suffixIcon: IconButton(
+                onPressed: () async {
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => CustomScanner(operationType: 'entry'),
+                    ),
+                  );
+                  
+                  if (result != null) {
+                    setState(() {
+                      controller.text = result.toString();
+                    });
+                    Fluttertoast.showToast(msg: 'Id is : $result');
+                  }
+                },
+                icon: const Icon(
+                  Icons.qr_code_scanner,
+                  color: primaryColor,
+                ),
+              ),
+              hintText: 'Enter user ID',
+              hintStyle: const TextStyle(color: secondaryTextColor),
+            ),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => StudentListScreen(
+                      userId: controller.text,
+                    ),
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: primaryColor,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text(
+                'Submit',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+        ],
+      ),
     );
   }
 }

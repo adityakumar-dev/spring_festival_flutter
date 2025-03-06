@@ -530,7 +530,7 @@ class _QuickRegisterScreenState extends State<QuickRegisterScreen> {
     try {
       final request = http.MultipartRequest(
         'POST', 
-        Uri.parse('https://valid-uncommon-orca.ngrok-free.app/users/create')
+        Uri.parse('https://api.vmsbutu.it.com/users/create')
       );
       
       // Add form fields with correct server-side keys

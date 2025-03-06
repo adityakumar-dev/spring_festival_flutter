@@ -134,13 +134,6 @@ class _ViewGuestScreenState extends State<ViewGuestScreen> {
                 color: Color.fromARGB(255, 10, 128, 120)),
               onPressed: () => Navigator.pop(context),
             ),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.more_vert, 
-                  color: Color.fromARGB(255, 10, 128, 120)),
-                onPressed: _showOptionsMenu,
-              ),
-            ],
           ),
         ),
       ),
@@ -173,32 +166,7 @@ class _ViewGuestScreenState extends State<ViewGuestScreen> {
                 ),
 
                 // Action Buttons
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      _buildActionButton(
-                        icon: Icons.verified_user,
-                        label: 'Verify',
-                        onTap: () => _verifyGuest(),
-                        color: Color.fromARGB(255, 10, 128, 120),
-                      ),
-                      _buildActionButton(
-                        icon: Icons.block,
-                        label: 'Block',
-                        onTap: () => _showBlockDialog(),
-                        color: Colors.red,
-                      ),
-                      _buildActionButton(
-                        icon: Icons.history,
-                        label: 'History',
-                        onTap: () => _showHistoryDetails(),
-                        color: Color.fromARGB(255, 10, 128, 120),
-                      ),
-                    ],
-                  ),
-                ),
+              
 
                 // User Info Card with blur effect
                 Padding(
@@ -239,7 +207,70 @@ class _ViewGuestScreenState extends State<ViewGuestScreen> {
                       ),
                     ),
                   ),
-
+                 Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Color(0xFF0A8078),  // Your original teal color
+                          Color(0xFF0A8078).withOpacity(0.8),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(15),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Color(0xFF0A8078).withOpacity(0.3),
+                          blurRadius: 8,
+                          offset: Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () => _showHistoryDetails(),
+                        borderRadius: BorderRadius.circular(15),
+                        splashColor: Colors.white.withOpacity(0.2),
+                        highlightColor: Colors.white.withOpacity(0.1),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 16,
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.history,
+                                color: Colors.white,
+                                size: 24,
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                'View Entry History',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                              const Spacer(),
+                              Icon(
+                                Icons.arrow_forward_ios,
+                                color: Colors.white.withOpacity(0.7),
+                                size: 16,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
                 // Verification History
                 // if (!widget.isQuickRegister)
                 //   Padding(
@@ -427,6 +458,14 @@ class _ViewGuestScreenState extends State<ViewGuestScreen> {
               color: Colors.grey[600],
             ),
           ),
+        if(user['group_count'] != null  )
+          Text(
+            'Group Count: ${user['group_count']}',
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey[600],
+            ),
+          ),
         // Created date
         if (user['created_at'] != null)
           Text(
@@ -515,62 +554,6 @@ class _ViewGuestScreenState extends State<ViewGuestScreen> {
     );
   }
 
-  Widget _buildVerificationHistory(Map<String, dynamic> data, Map<String, dynamic> user) {
-    final faceRecognitions = data['face_recognition'] as List?;
-    final qrScans = data['qr_scan'] as List?;
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Verification History',
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF2C3E50),
-              ),
-            ),
-            if (faceRecognitions?.isNotEmpty ?? false) ...[
-              const SizedBox(height: 16),
-              Text(
-                'Face Recognition',
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                  color: Color(0xFF2C3E50),
-                ),
-              ),
-              ...faceRecognitions!.map((scan) => ListTile(
-                leading: const Icon(Icons.face),
-                title: Text(scan['timestamp'] ?? 'Unknown time'),
-                subtitle: Text(scan['status'] ?? 'Unknown status'),
-              )),
-            ],
-            if (qrScans?.isNotEmpty ?? false) ...[
-              const SizedBox(height: 16),
-              Text(
-                'QR Code Scans',
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                  color: Color(0xFF2C3E50),
-                ),
-              ),
-              ...qrScans!.map((scan) => ListTile(
-                leading: const Icon(Icons.qr_code),
-                title: Text(scan['timestamp'] ?? 'Unknown time'),
-                subtitle: Text(scan['status'] ?? 'Unknown status'),
-              )),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildStatusBadge(String label, Color color) {
     return Container(
       margin: const EdgeInsets.only(right: 8),
@@ -590,35 +573,6 @@ class _ViewGuestScreenState extends State<ViewGuestScreen> {
     );
   }
 
-  void _showOptionsMenu() {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ListTile(
-            leading: const Icon(Icons.edit),
-            title: const Text('Edit Details'),
-            onTap: () {
-              Navigator.pop(context);
-              _editGuestDetails();
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.delete, color: Colors.red),
-            title: const Text('Delete Guest', style: TextStyle(color: Colors.red)),
-            onTap: () {
-              Navigator.pop(context);
-              _showDeleteDialog();
-            },
-          ),
-        ],
-      ),
-    );
-  }
 
   void _showHistoryDetails() {
     showModalBottomSheet(
@@ -637,59 +591,7 @@ class _ViewGuestScreenState extends State<ViewGuestScreen> {
     );
   }
 
-  void _verifyGuest() {
-    // Implement verification logic
-  }
 
-  void _showBlockDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Block Guest'),
-        content: const Text('Are you sure you want to block this guest?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              // Implement block logic
-              Navigator.pop(context);
-            },
-            child: const Text('Block', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _editGuestDetails() {
-    // Implement edit logic
-  }
-
-  void _showDeleteDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Guest'),
-        content: const Text('This action cannot be undone. Continue?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              // Implement delete logic
-              Navigator.pop(context);
-            },
-            child: const Text('Delete', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildDetailedHistory(ScrollController scrollController) {
     final entryRecords = guestData?['entry_records'] as List? ?? [];
@@ -772,6 +674,7 @@ class _ViewGuestScreenState extends State<ViewGuestScreen> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
+            width: double.infinity,
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: color.withOpacity(0.1),

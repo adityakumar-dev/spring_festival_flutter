@@ -161,7 +161,7 @@ class _QuickEntryBottomSheetState extends State<QuickEntryBottomSheet> {
                         if (appUserToken == null || appUserToken.isEmpty) {
                           throw Exception('App user token not found');
                         }
-                        request.headers['api_key'] = appUserToken;
+                        request.headers['api-key'] = appUserToken;
 
                         // Show loading indicator
                         showDialog(

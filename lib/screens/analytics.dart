@@ -179,10 +179,6 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                             'QR Verification',
                             '${analyticsData!['performance_metrics']['qr_verification_rate'].toStringAsFixed(1)}%'
                           ),
-                          _buildStatRow(
-                            'Group Success Rate',
-                            '${analyticsData!['performance_metrics']['group_success_rate'].toStringAsFixed(1)}%'
-                          ),
                         ],
                       ),
                       Icons.verified_user,
@@ -224,37 +220,12 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                             '${analyticsData!['scan_efficiency']['average_completion_time_minutes'].toStringAsFixed(1)} min'
                           ),
                           _buildStatRow(
-                            'Recent Average Time',
-                            '${analyticsData!['scan_efficiency']['recent_average_completion_time_minutes'].toStringAsFixed(1)} min'
-                          ),
-                          _buildStatRow(
                             'Total Valid Scans',
                             analyticsData!['scan_efficiency']['total_valid_scans'].toString()
                           ),
                           _buildStatRow(
                             'Completion Rate',
                             '${analyticsData!['scan_efficiency']['completion_rate'].toStringAsFixed(1)}%'
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Completion Time Distribution',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          _buildStatRow(
-                            'Under 1 minute',
-                            analyticsData!['scan_efficiency']['completion_time_distribution']['under_1_minute'].toString()
-                          ),
-                          _buildStatRow(
-                            '1-2 minutes',
-                            analyticsData!['scan_efficiency']['completion_time_distribution']['1_to_2_minutes'].toString()
-                          ),
-                          _buildStatRow(
-                            '2-5 minutes',
-                            analyticsData!['scan_efficiency']['completion_time_distribution']['2_to_5_minutes'].toString()
                           ),
                         ],
                       ),
@@ -272,27 +243,13 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                             analyticsData!['entry_statistics']['entry_types']['normal'].toString()
                           ),
                           _buildStatRow(
-                            'Group Entries',
-                            analyticsData!['entry_statistics']['entry_types']['group_entry'].toString()
+                            'Bypass Entries',
+                            analyticsData!['entry_statistics']['entry_types']['bypass'].toString()
                           ),
                           _buildStatRow(
                             'Average Duration',
                             '${analyticsData!['entry_statistics']['average_duration_minutes'].toStringAsFixed(1)} min'
                           ),
-                          if (analyticsData!['entry_statistics']['ongoing_users']['count'] > 0) ...[
-                            const SizedBox(height: 8),
-                            Text(
-                              'Ongoing Users',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            ...analyticsData!['entry_statistics']['ongoing_users']['details']
-                                .map<Widget>((user) => _buildOngoingUserRow(user))
-                                .toList(),
-                          ],
                         ],
                       ),
                       Icons.analytics,
@@ -439,29 +396,6 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildOngoingUserRow(Map<String, dynamic> user) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildStatRow(
-            'User ID',
-            user['user_id'].toString()
-          ),
-          _buildStatRow(
-            'Duration So Far',
-            '${user['duration_so_far'].toStringAsFixed(1)} min'
-          ),
-          _buildStatRow(
-            'Entry Type',
-            user['entry_type']
-          ),
-        ],
       ),
     );
   }
