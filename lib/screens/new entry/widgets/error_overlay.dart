@@ -1,6 +1,6 @@
   import 'package:flutter/material.dart';
 
-Widget buildErrorOverlay(String error, Function() onRetry) {
+Widget buildErrorOverlay(String error, Function() onRetry, Function() onBypass  ) {
     return Container(
       color: Colors.black87,
       child: Center(
@@ -33,6 +33,7 @@ Widget buildErrorOverlay(String error, Function() onRetry) {
                 ),
                 child: const Text('Try Again'),
               ),
+              ElevatedButton(onPressed: onBypass, child: Text("Bypass"))
             ],
           ),
         ),

@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
+import 'package:http/http.dart' as http;
+import 'package:spring_admin/providers/app_user_manager.dart';
+import 'package:spring_admin/screens/new%20entry/success.dart';
 import 'package:spring_admin/screens/new%20entry/widgets/error_overlay.dart';
 import 'package:spring_admin/screens/new%20entry/widgets/loading_overlay.dart';
 import 'package:provider/provider.dart';
+import 'package:spring_admin/utils/constants/server_endpoints.dart';
 import '../../providers/camera_settings_provider.dart';
 import 'widgets/face_overlay_painter.dart';
 
@@ -118,7 +122,49 @@ class _FaceVerificationScreenState extends State<FaceVerificationScreen> with Wi
               _buildOverlay(),
               _buildControls(provider),
               if (provider.error != null) 
-                buildErrorOverlay(provider.error!, () => provider.resetOverlay()),
+                buildErrorOverlay(provider.error!, () => provider.resetOverlay(), ()async{
+                   String userId = widget.userId.toString();
+                        String custom_reason =  "Face Verification Failed, verification bypassed";
+                        String app_user_email = Provider.of<AppUserManager>(context, listen: false).appUserId;
+
+                        final request = http.MultipartRequest(
+                          'POST',
+                          Uri.parse(ServerEndpoints.scanQr()),
+                        );
+                        request.fields['user_id'] = userId;
+                        request.fields['is_bypass'] = 'true';
+                        request.fields['bypass_reason'] = custom_reason;
+                        request.fields['app_user_email'] = app_user_email;
+                        final appUserToken = await Provider.of<AppUserManager>(context, listen: false).getAppUserToken();
+                        if (appUserToken == null || appUserToken.isEmpty) {
+                          throw Exception('App user token not found');
+                        }
+                        request.headers['api-key'] = appUserToken;
+
+                        // Show loading indicator
+                        showDialog(
+                          context: context,
+                          barrierDismissible: false,
+                          builder: (BuildContext context) {
+                            return const Center(
+                              child: CircularProgressIndicator(),
+                            );
+                          },
+                        );
+
+                        final response = await request.send();
+                        // Hide loading indicator
+                        Navigator.pop(context);
+
+                        if (response.statusCode == 200) {
+                          Navigator.pushNamed(context, SuccessScreen.routeName);
+                          } else {
+                            provider.resetOverlay();
+                            provider.error = "Face Verification Failed, verification bypassed";
+
+                            // provider.setError("Face Verification Failed, verification bypassed");
+                        }
+                } ),
               if (provider.isProcessing) buildLoadingOverlay(),
             ],
           ),
