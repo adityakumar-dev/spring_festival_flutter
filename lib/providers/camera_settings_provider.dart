@@ -134,8 +134,7 @@ class CameraSettingsProvider extends ChangeNotifier {
   Future<void> captureAndVerify(
     BuildContext context,
     String userId,
-    String operationType,
-    List<int>? studentIds,
+   
   ) async {
     if (controller == null || !controller!.value.isInitialized) {
       return;
@@ -145,103 +144,38 @@ class CameraSettingsProvider extends ChangeNotifier {
 
     try {
       isProcessing = true;
-      error = null;
       notifyListeners();
       
       await captureImage();
-
-      final XFile image = capturedImage!;
-      if (operationType == 'individual') {
-        final verifyRequest = http.MultipartRequest(
-          'POST',
-          Uri.parse(
-            ServerEndpoints.verifyFaceRecognition(),
-          ),
-        );
-
-        final appUserToken =
-            await Provider.of<AppUserManager>(
-              context,
-              listen: false,
-            ).getAppUserToken();
-        if (appUserToken == null || appUserToken.isEmpty) {
-          throw Exception('App user token not found');
-        }
-
-        final appUserId =
-            Provider.of<AppUserManager>(context, listen: false).appUserId;
-        if (appUserId == null || appUserId.isEmpty) {
-          throw Exception('App user ID not found');
-        }
-
-        verifyRequest.fields['user_id'] = userId;
-        verifyRequest.fields['app_user_email'] =
-            Provider.of<AppUserManager>(context, listen: false).appUserId;
-        verifyRequest.files.add(
-          await http.MultipartFile.fromPath('image', image.path),
-        );
-
-        verifyRequest.headers['api-key'] = appUserToken;
-
-        final verifyResponse = await verifyRequest.send();
-        // final verifyData = await verifyResponse.stream.bytesToString()
-        // ;
-
-        if (verifyResponse.statusCode != 200) {
-          throw Exception('Failed to verify face');
-        } else {
-          Fluttertoast.showToast(msg: 'Face verification successful');
-          Navigator.pushReplacementNamed(context, SuccessScreen.routeName);
-          FirebaseController.ref.child('users/success').push().set({
-            'user_id': userId,
-            'verified_at': DateTime.now().toIso8601String(),
-            'status': 'verified',
-          });
-        }
-        // if (!mounted) return;
-      } else {
-        final request = http.MultipartRequest(
-          'POST',
-          Uri.parse(ServerEndpoints.getGroupVerify()),
-        );
-        
-        // Convert studentIds from List<int>? to proper string format
-        if (studentIds == null || studentIds.isEmpty) {
-          throw Exception('Student IDs are required');
-        }
-        
-        request.fields['user_id'] = userId;
-        request.headers['api-key'] = Provider.of<AppUserManager>(context, listen: false).appUserToken;
-        request.files.add(await http.MultipartFile.fromPath('image', image.path));
-        
-        // Convert the list to proper format [1,2,3] instead of [1, 2, 3].toString()
-        request.fields['student_ids'] = jsonEncode(studentIds);
-        
-        final response = await request.send();
-        final responseBody = await response.stream.bytesToString();
-        final responseData = jsonDecode(responseBody);
-        
-        if (response.statusCode != 200) {
-          final errorMessage = responseData['detail'] ?? 'Server error occurred';
-          throw Exception(errorMessage);
-        } else {
-          Fluttertoast.showToast(msg: 'Group verification successful');
-          Navigator.pushReplacementNamed(context, SuccessScreen.routeName);
-        }
-      } 
-      
       isProcessing = false;
-      notifyListeners();
-      
-    } catch (e) {
-      FirebaseController.ref.child('users/failed').push().set({
-        'user_id': userId,
-        'verified_at': DateTime.now().toIso8601String(),
-        'status': 'failed',
-      });
+      final XFile image = capturedImage!;
+      //process the image on the server and go back to the previous screen run on the background
+      //close the dialog
+      Navigator.pop(context);
+      //close the screen
+      Navigator.pop(context);
 
-      Fluttertoast.showToast(msg: 'Face verification failed');
-      error = e.toString();
+      final request = http.MultipartRequest('POST', Uri.parse(ServerEndpoints.captureFace()));
+      request.fields['user_id'] = userId;
+      request.files.add(http.MultipartFile.fromBytes('file', await image.readAsBytes(), filename: image.name));
+      request.headers['api-key'] = Provider.of<AppUserManager>(context, listen: false).appUserToken;
+      final response = await request.send();
+      final responseBody = await response.stream.bytesToString();
+      final jsonResponse = jsonDecode(responseBody);
+      if(response.statusCode == 200){
+        Fluttertoast.showToast(msg: 'Face Capture Success');
+        isProcessing = false;
+        // Navigator.pushReplacementNamed(context, SuccessScreen.routeName);
+      }else{
+        debugPrint(jsonResponse.toString());
+        print(jsonResponse.toString());
+        Fluttertoast.showToast(msg: jsonResponse['detail']);
+        error = jsonResponse['detail'];
+        isProcessing = false;
+        notifyListeners();
+      }
+    } catch (e) {
+      
       isProcessing = false;
       notifyListeners();
     }

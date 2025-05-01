@@ -5,9 +5,12 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+import 'package:spring_admin/apis/local_storage.dart';
 import 'package:spring_admin/providers/app_user_manager.dart';
 import 'package:spring_admin/screens/home/home.dart';
+import 'package:spring_admin/screens/register/register_screen.dart';
 import 'package:spring_admin/utils/constants/server_endpoints.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -25,13 +28,13 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _handleLogin() async {
     setState(() => _isLoading = true);
-    
+
     try {
       var request = http.MultipartRequest(
-        'POST', 
-        Uri.parse(ServerEndpoints.verifyUser())
+        'POST',
+        Uri.parse(ServerEndpoints.verifyUser()),
       );
-      
+
       // Add form fields
       request.fields['user_name'] = _usernameController.text;
       request.fields['user_password'] = _passwordController.text;
@@ -63,26 +66,33 @@ class _LoginScreenState extends State<LoginScreen> {
           final userId = data['user']['email']?.toString();
           final token = data['api_key']?.toString();
           if (token != null && token.isNotEmpty) {
-            Provider.of<AppUserManager>(context, listen: false).setAppUserToken(token);
+            Provider.of<AppUserManager>(
+              context,
+              listen: false,
+            ).setAppUserToken(token);
           }
           if (userId == null || userId.isEmpty) {
             throw Exception('Invalid user ID received from server');
           }
 
           if (!mounted) return;
-          
+
           // Set the user ID in provider
-          Provider.of<AppUserManager>(context, listen: false).setAppUserId(userId);
-    if(!Platform.isWindows){
-          await Fluttertoast.showToast(
-            msg: "Login successful",
-            backgroundColor: Colors.green,
-            textColor: Colors.white,
-            toastLength: Toast.LENGTH_SHORT,
-          );
-    }
+          Provider.of<AppUserManager>(
+            context,
+            listen: false,
+          ).setAppUserId(userId);
+          if (!Platform.isWindows) {
+            await Fluttertoast.showToast(
+              msg: "Login successful",
+              backgroundColor: Colors.green,
+              textColor: Colors.white,
+              toastLength: Toast.LENGTH_SHORT,
+            );
+          }
           await Future.delayed(const Duration(milliseconds: 500));
-          
+
+          await LocalStorageHive.saveAllData(token ?? '', userId ?? '');
           if (!mounted) return;
           Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(builder: (context) => const HomeScreen()),
@@ -90,7 +100,9 @@ class _LoginScreenState extends State<LoginScreen> {
           );
         } catch (e) {
           debugPrint("Navigation error details: $e");
-          debugPrint("Response data: $data"); // Debug print to see full response
+          debugPrint(
+            "Response data: $data",
+          ); // Debug print to see full response
           if (mounted) {
             Fluttertoast.showToast(
               msg: "Login error: Invalid user data received",
@@ -136,46 +148,69 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void showLoginBox(BuildContext context) {
     showModalBottomSheet(
-        context: context,
-        isScrollControlled: true,
-        builder: (BuildContext context) {
-          // bool isKeyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
-          
-          return Padding(
-            padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-            child: Container(
-              // height: MediaQuery.of(context).size.height * 0.4,
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const SizedBox(height: 10),
-                    Container(
-                      child: inputTextfield("Username", Icons.person_outline_rounded, _usernameController, readOnly: false, isFocused: true),
+      context: context,
+      isScrollControlled: true,
+      builder: (BuildContext context) {
+        // bool isKeyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
+
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          child: Container(
+            // height: MediaQuery.of(context).size.height * 0.4,
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(height: 10),
+                  Container(
+                    child: inputTextfield(
+                      "Username",
+                      Icons.person_outline_rounded,
+                      _usernameController,
+                      readOnly: false,
+                      isFocused: true,
                     ),
-                    const SizedBox(height: 10),
-                    Container(
-                      child: inputTextfield("Password",isPassword: true, Icons.lock_outline_rounded, _passwordController, readOnly: false),
+                  ),
+                  const SizedBox(height: 10),
+                  Container(
+                    child: inputTextfield(
+                      "Password",
+                      isPassword: true,
+                      Icons.lock_outline_rounded,
+                      _passwordController,
+                      readOnly: false,
                     ),
-                    const SizedBox(height: 20),
-                    ElevatedButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        _handleLogin();
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Color.fromARGB(255, 10, 128, 120),
-                        minimumSize: Size(double.infinity, 50),
+                  ),
+                  const SizedBox(height: 20),
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      _handleLogin();
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Color.fromARGB(255, 10, 128, 120),
+                      minimumSize: Size(double.infinity, 50),
+                    ),
+                    child: Text(
+                      'Login',
+                      style: TextStyle(
+                        fontSize: 18,
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 1,
                       ),
-                      child:  Text('Login', style: TextStyle(fontSize: 18,color: Colors.white, fontWeight: FontWeight.w600, letterSpacing: 1),),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
-          );
-        });
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -185,15 +220,14 @@ class _LoginScreenState extends State<LoginScreen> {
       body: SafeArea(
         child: Stack(
           children: [
-
             // Background Image
             Positioned.fill(
               child: Container(
-                // decoration: BoxDecoration(
-                //   gradient: LinearGradient(colors: [
-                //     Colors.white, Colors.white, Colors.pink.shade100
-                //   ], begin: Alignment.topLeft, end: Alignment.bottomRight)
-                // ),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(colors: [
+                    Colors.white, Colors.pink.shade100.withOpacity(0.1), Colors.pink.shade100
+                  ], begin: Alignment.topLeft, end: Alignment.bottomRight)
+                ),
                 padding: const EdgeInsets.all(8.0),
                 child: Opacity(
                   opacity: 0.1,
@@ -210,8 +244,8 @@ class _LoginScreenState extends State<LoginScreen> {
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 30),
               decoration: BoxDecoration(
-                  // color: Colors.white,
-                  ),
+                // color: Colors.white,
+              ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -219,48 +253,56 @@ class _LoginScreenState extends State<LoginScreen> {
                   // Logo
                   Column(
                     children: [
-                      Image.asset(
-                        'assets/images/emblem.png',
-                        height: 150,
+                     
+                      Text(
+                        'KAUTHIG 2025',
+                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
                       ),
                       const SizedBox(height: 10),
                       Text(
-                        'SPRING FESTIVAL 2025',
+                        "VEER MADHO SINGH BHANDARI",
+                        textAlign: TextAlign.center,
                         style: TextStyle(
-                          fontSize: 20,
+                          fontSize: 16,
+                          color: Colors.grey[600],
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
-                      const SizedBox(height: 10),
                       Text(
-                        "राजभवन उत्तराखंड",
+                        "UTTARAKHAND TECHNICAL UNIVERSITY",
+                        textAlign: TextAlign.center,
                         style: TextStyle(
-                            fontSize: 20, fontWeight: FontWeight.w600),
-                      ),
-                      Text(
-                        "RAJ BHAWAN UTTARKHAND",
-                        style: TextStyle(
-                            fontSize: 20, fontWeight: FontWeight.w600),
+                          fontSize: 16,
+                          color: Colors.grey[600],
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                       const SizedBox(height: 50),
                     ],
                   ),
+                  Text("Login with your credentials", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),),
+                  const SizedBox(height: 20),
                   AppUserLogin(),
+                  const SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text("Not a member? ", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),),
+                      TextButton(onPressed: (){
+                        Navigator.pushNamed(context, RegisterScreen.routeName);
+                      }, child: Text("Register", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.blue),)),
+                    ],
+                  ),
                   const Spacer(flex: 2),
                   // Powered by text
                   Column(
                     children: [
                       Text(
                         'Powered by',
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 14,
-                        ),
+                        style: TextStyle(color: Colors.grey[600], fontSize: 14),
                       ),
                       const SizedBox(height: 10),
-                      Image.asset(
-                        'assets/images/utu-logo.png',
-                        height: 80,
-                      ),
+                      Image.asset('assets/images/utu-logo.png', height: 80),
                     ],
                   ),
                   const SizedBox(height: 10),
@@ -272,7 +314,6 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
   }
-
   Column AppUserLogin() {
     return Column(
       children: [
@@ -290,9 +331,14 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ],
           ),
-          child: inputTextfield("Username", Icons.person_outline_rounded, _usernameController, onTap: () {
-            showLoginBox(context);
-          }),
+          child: inputTextfield(
+            "Username",
+            Icons.person_outline_rounded,
+            _usernameController,
+            onTap: () {
+              showLoginBox(context);
+            },
+          ),
         ),
         const SizedBox(height: 25),
 
@@ -309,11 +355,15 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ],
           ),
-          child: inputTextfield("Password", Icons.lock_outline_rounded, _passwordController, isPassword: true, onTap: () {
-            showLoginBox(context);
-          }),
-              
-          
+          child: inputTextfield(
+            "Password",
+            Icons.lock_outline_rounded,
+            _passwordController,
+            isPassword: true,
+            onTap: () {
+              showLoginBox(context);
+            },
+          ),
         ),
         const SizedBox(height: 35),
 
@@ -343,74 +393,81 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               padding: const EdgeInsets.symmetric(vertical: 15),
             ),
-            child: _isLoading
-                ? const SizedBox(
-                    height: 25,
-                    width: 25,
-                    child: CircularProgressIndicator(
-                      color: Colors.white,
-                      strokeWidth: 2.5,
+            child:
+                _isLoading
+                    ? const SizedBox(
+                      height: 25,
+                      width: 25,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2.5,
+                      ),
+                    )
+                    : const Text(
+                      'Login',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 1,
+                      ),
                     ),
-                  )
-                : const Text(
-                    'Login',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 1,
-                    ),
-                  ),
           ),
         ),
       ],
     );
   }
 
-  TextField inputTextfield( String hintText, IconData prefixIcon, TextEditingController controller, {bool isFocused = false, bool isPassword = false,bool readOnly = true, VoidCallback? onTap}) {
+}
+
+  TextField inputTextfield(
+    String hintText,
+    IconData prefixIcon,
+    TextEditingController controller, {
+    bool isFocused = false,
+    bool isPassword = false,
+    bool readOnly = true,
+    VoidCallback? onTap,
+  }) {
     return TextField(
       // focusNode: focusNode,
       autofocus: isFocused,
-          onTap: onTap,
-          readOnly: readOnly,
-          controller: controller,
-          obscureText: isPassword,
-          style: const TextStyle(fontSize: 16),
-          decoration: InputDecoration(
-            filled: true,
-            fillColor: Colors.white,
-            hintText: hintText,
-            hintStyle: TextStyle(
-              color: Colors.grey[400],
-              fontSize: 16,
-            ),
-            prefixIcon: Container(
-              padding: const EdgeInsets.all(12),
-              child: Icon(
-                prefixIcon,
-                color: Color.fromARGB(255, 10, 128, 120),
-                size: 24,
-              ),
-            ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(15),
-              borderSide: BorderSide.none,
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(15),
-              borderSide: BorderSide.none,
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(15),
-              borderSide: BorderSide(
-                color: Color.fromARGB(255, 10, 128, 120),
-                width: 2,
-              ),
-            ),
-            contentPadding: const EdgeInsets.symmetric(
-              vertical: 20,
-              horizontal: 20,
-            ),
+      onTap: onTap,
+      readOnly: readOnly,
+      controller: controller,
+      obscureText: isPassword,
+      style: const TextStyle(fontSize: 16),
+      decoration: InputDecoration(
+        filled: true,
+        fillColor: Colors.white,
+        hintText: hintText,
+        hintStyle: TextStyle(color: Colors.grey[400], fontSize: 16),
+        prefixIcon: Container(
+          padding: const EdgeInsets.all(12),
+          child: Icon(
+            prefixIcon,
+            color: Color.fromARGB(255, 10, 128, 120),
+            size: 24,
           ),
-        );
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(15),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(15),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(15),
+          borderSide: BorderSide(
+            color: Color.fromARGB(255, 10, 128, 120),
+            width: 2,
+          ),
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          vertical: 20,
+          horizontal: 20,
+        ),
+      ),
+    );
   }
-}

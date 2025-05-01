@@ -13,9 +13,8 @@ import 'widgets/face_overlay_painter.dart';
 class FaceVerificationScreen extends StatefulWidget {
   static const String routeName = '/faceVerification';
   final int userId;
-  final String operationType;
-final List<int>? studentIds;
-  const FaceVerificationScreen({super.key, required this.userId, required this.operationType, this.studentIds});
+
+  const FaceVerificationScreen({super.key, required this.userId});
 
   @override
   State<FaceVerificationScreen> createState() => _FaceVerificationScreenState();
@@ -44,132 +43,145 @@ class _FaceVerificationScreenState extends State<FaceVerificationScreen> with Wi
     }
 
     if (state == AppLifecycleState.inactive) {
-      cameraProvider!.disposeCamera();
+      cameraProvider!.controller?.dispose();
     } else if (state == AppLifecycleState.resumed) {
       cameraProvider!.initCamera();
     }
   }
 
   @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    cameraProvider?.controller?.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Consumer<CameraSettingsProvider>(
-      builder: (context, provider, child) {
-        if (provider.isInitializing) {
-          return const Scaffold(
-            backgroundColor: Colors.black,
-            body: Center(
-              child: CircularProgressIndicator(
-                color: Colors.white,
+    return WillPopScope(
+      onWillPop: () async {
+        // Clean up before popping
+        await cameraProvider?.controller?.dispose();
+        return true;
+      },
+      child: Consumer<CameraSettingsProvider>(
+        builder: (context, provider, child) {
+          if (provider.isInitializing) {
+            return const Scaffold(
+              backgroundColor: Colors.black,
+              body: Center(
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                ),
               ),
-            ),
-          );
-        }
+            );
+          }
 
-        final cameraController = provider.controller;
+          final cameraController = provider.controller;
 
-        if (cameraController == null || !cameraController.value.isInitialized) {
+          if (cameraController == null || !cameraController.value.isInitialized) {
+            return Scaffold(
+              backgroundColor: Colors.black,
+              body: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      'Camera not initialized',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () => provider.initCamera(),
+                      child: const Text('Retry'),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }
+
+          final size = MediaQuery.of(context).size;
+          final deviceRatio = size.width / size.height;
+          // Modify the scale calculation to better fit the screen
+          final scale = 1.5 / (deviceRatio * cameraController.value.aspectRatio);
+
+          // Calculate total rotation
+          final baseRotation = provider.getRotationAngle();
+          final cameraRotation = provider.isFrontCamera ? 
+              -90 * (3.1415927 / 180) : 
+              90 * (3.1415927 / 180);
+          final totalRotation = baseRotation + cameraRotation;
+
           return Scaffold(
             backgroundColor: Colors.black,
-            body: Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text(
-                    'Camera not initialized',
-                    style: TextStyle(color: Colors.white),
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () => provider.initCamera(),
-                    child: const Text('Retry'),
-                  ),
-                ],
-              ),
-            ),
-          );
-        }
-
-        final size = MediaQuery.of(context).size;
-      final deviceRatio = size.width / size.height;
-        // Modify the scale calculation to better fit the screen
-        final scale = 1.5 / (deviceRatio * cameraController.value.aspectRatio);
-
-
-        // Calculate total rotation
-        final baseRotation = provider.getRotationAngle();
-        final cameraRotation = provider.isFrontCamera ? 
-            -90 * (3.1415927 / 180) : 
-            90 * (3.1415927 / 180);
-        final totalRotation = baseRotation + cameraRotation;
-
-        return Scaffold(
-          backgroundColor: Colors.black,
-          body: Stack(
-            fit: StackFit.expand,
-            children: [
-              Transform.scale(
-                scale: scale,
-                child: Center(
-                  child: AspectRatio(
-                    aspectRatio: cameraController.value.aspectRatio,
-                    child: Transform.rotate(
-                      angle: totalRotation,
-                      child: CameraPreview(cameraController),
+            body: Stack(
+              fit: StackFit.expand,
+              children: [
+                Transform.scale(
+                  scale: scale,
+                  child: Center(
+                    child: AspectRatio(
+                      aspectRatio: cameraController.value.aspectRatio,
+                      child: Transform.rotate(
+                        angle: totalRotation,
+                        child: CameraPreview(cameraController),
+                      ),
                     ),
                   ),
                 ),
-              ),
-              _buildOverlay(),
-              _buildControls(provider),
-              if (provider.error != null) 
-                buildErrorOverlay(provider.error!, () => provider.resetOverlay(), ()async{
-                   String userId = widget.userId.toString();
-                        String custom_reason =  "Face Verification Failed, verification bypassed";
-                        String app_user_email = Provider.of<AppUserManager>(context, listen: false).appUserId;
+                _buildOverlay(),
+                _buildControls(provider),
+                if (provider.error != null) 
+                  buildErrorOverlay(provider.error!, () => provider.resetOverlay(), ()async{
+                     String userId = widget.userId.toString();
+                          String custom_reason =  "Face Verification Failed, verification bypassed";
+                          String app_user_email = Provider.of<AppUserManager>(context, listen: false).appUserId;
 
-                        final request = http.MultipartRequest(
-                          'POST',
-                          Uri.parse(ServerEndpoints.scanQr()),
-                        );
-                        request.fields['user_id'] = userId;
-                        request.fields['is_bypass'] = 'true';
-                        request.fields['bypass_reason'] = custom_reason;
-                        request.fields['app_user_email'] = app_user_email;
-                        final appUserToken = await Provider.of<AppUserManager>(context, listen: false).getAppUserToken();
-                        if (appUserToken == null || appUserToken.isEmpty) {
-                          throw Exception('App user token not found');
-                        }
-                        request.headers['api-key'] = appUserToken;
+                          final request = http.MultipartRequest(
+                            'POST',
+                            Uri.parse(ServerEndpoints.scanQr()),
+                          );
+                          request.fields['user_id'] = userId;
+                          request.fields['is_bypass'] = 'true';
+                          request.fields['bypass_reason'] = custom_reason;
+                          request.fields['app_user_email'] = app_user_email;
+                          final appUserToken = await Provider.of<AppUserManager>(context, listen: false).getAppUserToken();
+                          if (appUserToken == null || appUserToken.isEmpty) {
+                            throw Exception('App user token not found');
+                          }
+                          request.headers['api-key'] = appUserToken;
 
-                        // Show loading indicator
-                        showDialog(
-                          context: context,
-                          barrierDismissible: false,
-                          builder: (BuildContext context) {
-                            return const Center(
-                              child: CircularProgressIndicator(),
-                            );
-                          },
-                        );
+                          // Show loading indicator
+                          showDialog(
+                            context: context,
+                            barrierDismissible: false,
+                            builder: (BuildContext context) {
+                              return const Center(
+                                child: CircularProgressIndicator(),
+                              );
+                            },
+                          );
 
-                        final response = await request.send();
-                        // Hide loading indicator
-                        Navigator.pop(context);
+                          final response = await request.send();
+                          // Hide loading indicator
+                          Navigator.pop(context);
 
-                        if (response.statusCode == 200) {
-                          Navigator.pushNamed(context, SuccessScreen.routeName);
-                          } else {
-                            provider.resetOverlay();
-                            provider.error = "Face Verification Failed, verification bypassed";
+                          if (response.statusCode == 200) {
+                            Navigator.pushNamed(context, SuccessScreen.routeName);
+                            } else {
+                              provider.resetOverlay();
+                              provider.error = "Face Verification Failed, verification bypassed";
 
-                            // provider.setError("Face Verification Failed, verification bypassed");
-                        }
-                } ),
-              if (provider.isProcessing) buildLoadingOverlay(),
-            ],
-          ),
-        );
-      },
+                              // provider.setError("Face Verification Failed, verification bypassed");
+                          }
+                  } ),
+                if (provider.isProcessing) buildLoadingOverlay(),
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
 
@@ -191,7 +203,12 @@ class _FaceVerificationScreenState extends State<FaceVerificationScreen> with Wi
               children: [
                 IconButton(
                   icon: const Icon(Icons.arrow_back, color: Colors.white, size: 28),
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: () async {
+                    await provider.controller?.dispose();
+                    if (context.mounted) {
+                      Navigator.of(context).pop();
+                    }
+                  },
                 ),
                 Row(
                   children: [
@@ -245,7 +262,7 @@ class _FaceVerificationScreenState extends State<FaceVerificationScreen> with Wi
                   FloatingActionButton.large(
                     onPressed: () { 
                       // provider.setIsProcessing(false);
-                      provider.captureAndVerify(context, widget.userId.toString(), widget.operationType, widget.studentIds);
+                      provider.captureAndVerify(context, widget.userId.toString());
                       // provider.setIsProcessing(false);
                     },
                     backgroundColor: Colors.white,
@@ -261,11 +278,5 @@ class _FaceVerificationScreenState extends State<FaceVerificationScreen> with Wi
         ],
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    super.dispose();
   }
 }

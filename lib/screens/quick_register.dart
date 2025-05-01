@@ -4,12 +4,14 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:spring_admin/providers/app_user_manager.dart';
 import 'package:spring_admin/providers/camera_settings_provider.dart';
 import 'package:spring_admin/screens/camer_capture_screen.dart';
 import '../utils/constants/server_endpoints.dart';
 import 'package:http/http.dart' as http;
+import 'package:open_file/open_file.dart';
 
 class QuickRegisterScreen extends StatefulWidget {
   static const String routeName = '/quickRegister';
@@ -23,26 +25,32 @@ class _QuickRegisterScreenState extends State<QuickRegisterScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
-  final _uniqueIdController = TextEditingController();
-  String _selectedIdType = 'Aadhar'; // Default selection
-  
+ final _contactController = TextEditingController();
+ final _instituteController = TextEditingController();
+ String visitor_card_path = '';
   // Update ID types map with correct server keys
-  final Map<String, String> _idTypesMap = {
-    'Aadhar': 'aadhar',
-    'PAN': 'pan',
-    'Driving License': 'driving_license',
-    'Voter ID': 'voter_id',
-    'Passport': 'passport',
-  };
-  
-  final List<String> _idTypes = ['Aadhar', 'PAN', 'Driving License', 'Voter ID', 'Passport'];
+  // final Map<String, String> _idTypesMap = {
+  //   'Aadhar': 'aadhar',
+  //   'PAN': 'pan',
+  //   'Driving License': 'driving_license',
+  //   'Voter ID': 'voter_id',
+  //   'Passport': 'passport',
+  // };
+
+  // final List<String> _idTypes = [
+  //   'Aadhar',
+  //   'PAN',
+  //   'Driving License',
+  //   'Voter ID',
+  //   'Passport',
+  // ];
   bool isLoading = false;
   String? error;
-
+  // String _selectedUserType = 'individual';
   @override
   Widget build(BuildContext context) {
     final cameraProvider = Provider.of<CameraSettingsProvider>(context);
-    
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -52,7 +60,7 @@ class _QuickRegisterScreenState extends State<QuickRegisterScreen> {
               colors: [
                 Color(0xFFFFCCCB),
                 Color(0xFFF5F5F5),
-                Color(0xFFF5F5F5).withOpacity(0.1)
+                Color(0xFFF5F5F5).withOpacity(0.1),
               ],
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
@@ -95,7 +103,7 @@ class _QuickRegisterScreenState extends State<QuickRegisterScreen> {
           SingleChildScrollView(
             child: Column(
               children: [
-                _buildHeaderCard(),
+                // _buildHeaderCard(),
                 Padding(
                   padding: const EdgeInsets.all(20.0),
                   child: ClipRRect(
@@ -119,10 +127,15 @@ class _QuickRegisterScreenState extends State<QuickRegisterScreen> {
                                   elevation: 0,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12),
-                                    side: BorderSide(color: Colors.grey.shade200),
+                                    side: BorderSide(
+                                      color: Colors.grey.shade200,
+                                    ),
                                   ),
                                   child: Padding(
-                                    padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 16,
+                                      horizontal: 8,
+                                    ),
                                     child: _buildPhotoSection(cameraProvider),
                                   ),
                                 ),
@@ -150,61 +163,44 @@ class _QuickRegisterScreenState extends State<QuickRegisterScreen> {
                                     if (value == null || value.trim().isEmpty) {
                                       return 'Please enter email address';
                                     }
-                                    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                                    if (!RegExp(
+                                      r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                                    ).hasMatch(value)) {
                                       return 'Please enter a valid email address';
                                     }
                                     return null;
                                   },
                                 ),
                                 const SizedBox(height: 16),
-                                _buildIdTypeSelector(),
-                                const SizedBox(height: 16),
                                 _buildInputField(
-                                  controller: _uniqueIdController,
-                                  label: 'ID Number',
-                                  helperText: "Enter $_selectedIdType Number",
-                                  icon: Icons.credit_card,
+                                  controller: _contactController,
+                                  label: 'Contact Number',
+                                  helperText: "Enter Contact Number",
+                                  icon: Icons.phone,
                                   // maxLength: _selectedIdType == 'Aadhar' ? 12 : 10,
                                   keyboardType: TextInputType.text,
                                   validator: (value) {
                                     if (value == null || value.trim().isEmpty) {
-                                      return 'Please enter $_selectedIdType number';
-                                    }
-                                    // Validation based on ID type
-                                    switch (_selectedIdType) {
-                                      case 'Aadhar':
-                                        if (value.length != 12) {
-                                          return 'Aadhar number must be 12 digits';
-                                        }
-                                        break;
-                                      case 'PAN':
-                                        if (!RegExp(r'^[A-Z]{5}[0-9]{4}[A-Z]{1}$').hasMatch(value)) {
-                                          return 'Invalid PAN format';
-                                        }
-                                        break;
-                                      case 'Driving License':
-                                        if (value.length != 10) {
-                                          return 'Driving License number must be 10 digits';
-                                        }
-                                        break;
-                                      case 'Voter ID':
-                                        if (value.length != 10) {
-                                          return 'Voter ID number must be 10 digits';
-                                        }
-                                        break;
-                                      case 'Passport':
-                                        if (value.length != 10) {
-                                          return 'Passport number must be 10 digits';
-                                        }
-                                        break;
-                                      // Add other validations as needed
+                                      return 'Please enter Contact Number';
+                                    }else if(value.length != 10){
+                                      return 'Contact Number must be 10 digits';
                                     }
                                     return null;
                                   },
                                 ),
                                 if (error != null) _buildErrorMessage(),
-                                const SizedBox(height: 24),
+                               
+                                  const SizedBox(height: 16),
+                                  _buildInputField(
+                                  controller: _instituteController,
+                                  label: 'Institute',
+                                  helperText: "Enter Institute Name",
+                                  icon: Icons.school,
+                                ),
+                                const SizedBox(height: 16),
                                 _buildSubmitButton(cameraProvider),
+                                if (visitor_card_path.isNotEmpty)
+                                _buildVisitorCard(visitor_card_path),
                               ],
                             ),
                           ),
@@ -216,6 +212,76 @@ class _QuickRegisterScreenState extends State<QuickRegisterScreen> {
               ],
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildVisitorCard(String visitorCardPath) {
+    return ElevatedButton(
+      onPressed: () async {
+        try {
+          // Normalize the path (replace backslashes with forward slashes)
+          final normalizedCardPath = visitorCardPath.replaceAll(r'\', '/');
+
+          // Create the download URL
+          final downloadUrl = Uri.parse(
+            '${ServerEndpoints.baseUrl}/users/download-visitor-card/?card_path=${Uri.encodeComponent(normalizedCardPath)}',
+          );
+
+          // Get app user token for authentication
+          final appUserManager = Provider.of<AppUserManager>(
+            context,
+            listen: false,
+          );
+          final token = await appUserManager.getAppUserToken();
+
+          // Make the HTTP request
+          final response = await http.get(
+            downloadUrl,
+            headers: {'api-key': token},
+          );
+
+          if (response.statusCode == 200) {
+            // Get the application documents directory
+            final downloadPath = await getApplicationDocumentsDirectory();
+            final filePath = '${downloadPath.path}/visitor_card.png';
+
+            // Save the file
+            final file = File(filePath);
+            await file.writeAsBytes(response.bodyBytes);
+
+            // Open the file
+            await OpenFile.open(filePath);
+
+            // Show success message
+            Fluttertoast.showToast(
+              msg: 'Visitor card downloaded successfully',
+              backgroundColor: Colors.green,
+            );
+          } else {
+            throw Exception(
+              'Failed to download visitor card: ${response.statusCode}',
+            );
+          }
+        } catch (e) {
+          debugPrint('Error downloading visitor card: $e');
+          Fluttertoast.showToast(
+            msg: 'Error downloading visitor card. Please try again later.',
+            backgroundColor: Colors.red,
+          );
+        }
+      },
+      style: ElevatedButton.styleFrom(
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        backgroundColor: Theme.of(context).primaryColor,
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.download, size: 20, color: Colors.white),
+          SizedBox(width: 8),
+          Text('Download Visitor Card', style: TextStyle(color: Colors.white)),
         ],
       ),
     );
@@ -241,7 +307,12 @@ class _QuickRegisterScreenState extends State<QuickRegisterScreen> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: const Color.fromARGB(255, 10, 128, 120).withOpacity(0.1),
+                      color: const Color.fromARGB(
+                        255,
+                        10,
+                        128,
+                        120,
+                      ).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Icon(
@@ -321,54 +392,60 @@ class _QuickRegisterScreenState extends State<QuickRegisterScreen> {
                 borderRadius: BorderRadius.circular(12),
                 color: Colors.grey.shade50,
               ),
-              child: cameraProvider.capturedImage != null
-                  ? Stack(
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
-                          child: Image.file(
-                            File(cameraProvider.capturedImage!.path),
-                            fit: BoxFit.cover,
-                            width: double.infinity,
-                            height: double.infinity,
+              child:
+                  cameraProvider.capturedImage != null
+                      ? Stack(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: Image.file(
+                              File(cameraProvider.capturedImage!.path),
+                              fit: BoxFit.cover,
+                              width: double.infinity,
+                              height: double.infinity,
+                            ),
                           ),
-                        ),
-                        Positioned(
-                          top: 8,
-                          right: 8,
-                          child: IconButton(
-                            icon: const Icon(Icons.refresh, color: Colors.white),
-                            onPressed: () {
-                              cameraProvider.resetOverlay();
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const CameraCaptureScreen(),
-                                ),
-                              );
-                            },
+                          Positioned(
+                            top: 8,
+                            right: 8,
+                            child: IconButton(
+                              icon: const Icon(
+                                Icons.refresh,
+                                color: Colors.white,
+                              ),
+                              onPressed: () {
+                                cameraProvider.resetOverlay();
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder:
+                                        (context) =>
+                                            const CameraCaptureScreen(),
+                                  ),
+                                );
+                              },
+                            ),
                           ),
-                        ),
-                      ],
-                    )
-                  : Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.camera_alt_outlined,
-                          size: 48,
-                          color: Colors.grey.shade400,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Tap to capture photo',
-                          style: TextStyle(
-                            color: Colors.grey.shade600,
-                            fontSize: 14,
+                        ],
+                      )
+                      : Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.camera_alt_outlined,
+                            size: 48,
+                            color: Colors.grey.shade400,
                           ),
-                        ),
-                      ],
-                    ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Tap to capture photo',
+                            style: TextStyle(
+                              color: Colors.grey.shade600,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
             ),
           ),
         ),
@@ -402,7 +479,10 @@ class _QuickRegisterScreenState extends State<QuickRegisterScreen> {
           keyboardType: keyboardType,
           maxLength: maxLength,
           decoration: InputDecoration(
-            prefixIcon: Icon(icon, color: const Color.fromARGB(255, 10, 128, 120)),
+            prefixIcon: Icon(
+              icon,
+              color: const Color.fromARGB(255, 10, 128, 120),
+            ),
             filled: true,
             labelText: helperText,
             labelStyle: TextStyle(color: Colors.grey.shade600, fontSize: 12),
@@ -417,7 +497,9 @@ class _QuickRegisterScreenState extends State<QuickRegisterScreen> {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color.fromARGB(255, 10, 128, 120)),
+              borderSide: const BorderSide(
+                color: Color.fromARGB(255, 10, 128, 120),
+              ),
             ),
           ),
           validator: validator,
@@ -426,54 +508,13 @@ class _QuickRegisterScreenState extends State<QuickRegisterScreen> {
     );
   }
 
-  Widget _buildIdTypeSelector() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'ID Type',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: Color(0xFF1A237E),
-          ),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.grey.shade50,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.shade200),
-          ),
-          child: Column(
-            children: _idTypes.map((type) => RadioListTile<String>(
-              title: Text(type),
-              value: type,
-              groupValue: _selectedIdType,
-              onChanged: (value) {
-                setState(() {
-                  _selectedIdType = value!;
-                  _uniqueIdController.clear(); // Clear the ID field when type changes
-                });
-              },
-              activeColor: const Color.fromARGB(255, 10, 128, 120),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 8),
-            )).toList(),
-          ),
-        ),
-      ],
-    );
-  }
 
   Widget _buildErrorMessage() {
     return Padding(
       padding: const EdgeInsets.only(top: 16),
       child: Text(
         error!,
-        style: const TextStyle(
-          color: Colors.red,
-          fontSize: 14,
-        ),
+        style: const TextStyle(color: Colors.red, fontSize: 14),
       ),
     );
   }
@@ -490,64 +531,75 @@ class _QuickRegisterScreenState extends State<QuickRegisterScreen> {
           ),
           elevation: 2,
         ),
-        child: isLoading
-            ? const SizedBox(
-                height: 20,
-                width: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+        child:
+            isLoading
+                ? const SizedBox(
+                  height: 20,
+                  width: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                )
+                : const Text(
+                  'Register Guest',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              )
-            : const Text(
-                'Register Guest',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
       ),
     );
   }
 
   Future<void> _handleSubmit(CameraSettingsProvider cameraProvider) async {
-    // if (!_formKey.currentState!.validate()) 
-        debugPrint('handleSubmit');
-
-    if (cameraProvider.capturedImage == null) {
-      setState(() {
-        error = 'Please capture a photo';
-      });
-      return;
-    }
-
     setState(() {
-      isLoading = true;
       error = null;
+      isLoading = true;
     });
 
     try {
-      final request = http.MultipartRequest(
-        'POST', 
-        Uri.parse('https://api.vmsbutu.it.com/users/create')
+      // 1. Validate camera image
+      if (cameraProvider.capturedImage == null) {
+        throw Exception('Please capture a photo');
+      }
+
+      showLoadingDialog(context, "Registering Student...");
+
+      // 4. Get app user details
+      final appUserManager = Provider.of<AppUserManager>(
+        context,
+        listen: false,
       );
-      
-      // Add form fields with correct server-side keys
-      request.fields['name'] = _nameController.text;
-      request.fields['email'] = _emailController.text;
-      request.fields['unique_id_type'] = _idTypesMap[_selectedIdType] ?? 'aadhar';
-      request.fields['unique_id'] = _uniqueIdController.text;
-      request.fields['user_type'] = 'individual';
-      final appUserId = Provider.of<AppUserManager>(context, listen: false).appUserId;
-      if (appUserId == null || appUserId.isEmpty) {
+      final appUserId = appUserManager.appUserId;
+      if (appUserId?.isEmpty ?? true) {
         throw Exception('App user ID not found');
       }
-      request.fields['user_email'] = appUserId;
-      request.fields['is_quick_register'] = 'true';
-      final appUserToken = await Provider.of<AppUserManager>(context, listen: false).getAppUserToken();
-debugPrint('appUserToken: $appUserToken');
-request.headers['api-key'] = appUserToken;
+      final appUserToken = await appUserManager.getAppUserToken();
+
+      // 5. Prepare request
+      final request = http.MultipartRequest(
+        'POST',
+        Uri.parse('${ServerEndpoints.baseUrl}/users/create'),
+      );
+
+      // Add form fields
+    //    name: str = Form(...),
+    // email: str = Form(...),
+    // image: UploadFile = File(...),
+    // institution_name: str = Form(...),
+    // contact_number: str = Form(...),
+      request.fields.addAll({
+        'name': _nameController.text,
+        'email': _emailController.text,
+        'contact_number': _contactController.text,
+        'institution_name': _instituteController.text,
+      });
+
+      // Add headers
+      request.headers['api-key'] = appUserToken;
+
       // Add image file
       request.files.add(
         await http.MultipartFile.fromPath(
@@ -556,27 +608,28 @@ request.headers['api-key'] = appUserToken;
         ),
       );
 
+      // 6. Send request and handle response
       final response = await request.send();
       final responseData = await response.stream.bytesToString();
       final jsonResponse = json.decode(responseData);
 
       if (response.statusCode == 200) {
         if (!mounted) return;
+        visitor_card_path = jsonResponse['visitor_card_path'];
         Fluttertoast.showToast(
           msg: 'Guest registered successfully',
           backgroundColor: Colors.green,
           textColor: Colors.white,
         );
-        Navigator.pop(context);
+        // Navigator.pop(context); // Close registration screen
       } else {
         throw Exception(jsonResponse['message'] ?? 'Failed to register guest');
       }
     } catch (e) {
-      setState(() {
-        error = e.toString();
-      });
+      if (!mounted) return;
+      // Navigator.pop(context); // Close any open dialogs
       Fluttertoast.showToast(
-        msg: error ?? 'Failed to register guest',
+        msg: e.toString(),
         backgroundColor: Colors.red,
         textColor: Colors.white,
       );
@@ -585,15 +638,56 @@ request.headers['api-key'] = appUserToken;
         setState(() {
           isLoading = false;
         });
+        Navigator.pop(context); // Close registration screen
       }
     }
   }
+
 
   @override
   void dispose() {
     _nameController.dispose();
     _emailController.dispose();
-    _uniqueIdController.dispose();
+    _contactController.dispose();
+    _instituteController.dispose();
     super.dispose();
   }
 }
+
+
+  // Helper method for showing loading dialog
+  void showLoadingDialog(BuildContext context, String message) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder:
+          (context) => Material(
+            color: Colors.transparent,
+            child: Center(
+              child: Container(
+                width: 140,
+                padding: EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.shade200,
+                      blurRadius: 10,
+                      offset: Offset(0, 10),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    CircularProgressIndicator(),
+                    SizedBox(height: 16),
+                    Text(message, textAlign: TextAlign.center),
+                  ],
+                ),
+              ),
+            ),
+          ),
+    );
+  }

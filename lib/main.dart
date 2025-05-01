@@ -1,5 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:hive_flutter/adapters.dart';
 import 'package:spring_admin/firebase_options.dart';
 import 'package:spring_admin/providers/app_user_manager.dart';
 import 'package:spring_admin/screens/analytics.dart';
@@ -14,13 +15,15 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
 import 'package:spring_admin/providers/camera_settings_provider.dart';
 
+// import 'package:hive/hive.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await Hive.initFlutter();
+  await Hive.openBox('app_data');
+
   final prefs = await SharedPreferences.getInstance();
-  
+
   // Force portrait mode
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
@@ -30,13 +33,12 @@ void main() async {
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(
-          create: (_) => CameraSettingsProvider(prefs),
-        ),
+        ChangeNotifierProvider(create: (_) => CameraSettingsProvider(prefs)),
         ChangeNotifierProvider(
           // create: (_) => AppUser(),
           create: (_) => AppUserManager(),
         ),
+        
       ],
       child: const MyApp(),
     ),

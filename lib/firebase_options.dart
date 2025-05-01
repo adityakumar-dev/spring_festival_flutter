@@ -53,7 +53,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyA60C0V0IrG3-Eu9OY0Xxc_Bx36dLPPvwc',
-    appId: '1:199589356057:android:1619790cb2e0e38f568088',
+    appId: '1:199589356057:android:6122753c25b6b911568088',
     messagingSenderId: '199589356057',
     projectId: 'visitor-management-bbd7c',
     databaseURL: 'https://visitor-management-bbd7c-default-rtdb.firebaseio.com',
@@ -90,4 +90,5 @@ class DefaultFirebaseOptions {
     storageBucket: 'visitor-management-bbd7c.firebasestorage.app',
     measurementId: 'G-P7YZWJX1XM',
   );
+
 }

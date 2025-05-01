@@ -1,11 +1,70 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:isolate';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'view_guest.dart';
 import '../../utils/constants/server_endpoints.dart';
+
+// Define a Guest model for better type safety and performance
+class Guest {
+  final int id;
+  final String name;
+  final String email;
+  final String institutionName;
+  final String contactNumber;
+  final String createdAt;
+  final bool entryExist;
+  final String? imagePath;
+  final String? qrCode;
+
+  Guest({
+    required this.id,
+    required this.name,
+    required this.email,
+    required this.institutionName,
+    required this.contactNumber,
+    required this.createdAt,
+    required this.entryExist,
+    this.imagePath,
+    this.qrCode,
+  });
+
+  factory Guest.fromJson(Map<String, dynamic> json) {
+    return Guest(
+      id: json['id'],
+      name: json['name'] ?? '',
+      email: json['email'] ?? '',
+      institutionName: json['institution_name'] ?? '',
+      contactNumber: json['contact_number'] ?? '',
+      createdAt: json['created_at'] ?? '',
+      entryExist: json['entry_status']['has_entry_today'] ?? false,
+      imagePath: json['image_path'],
+      qrCode: json['qr_code'],
+    );
+  }
+}
+
+Future<Map<String, dynamic>> parseJsonData(String body) async {
+  try {
+    final parsedData = json.decode(body);
+    final data = parsedData['data'];
+    
+    return {
+      'statistics': Map<String, dynamic>.from(data['statistics']),
+      'today_statistics': Map<String, dynamic>.from(data['today_statistics']),
+      'all_users': (data['all_users'] as List)
+          .map((user) => Guest.fromJson(user))
+          .toList(),
+    };
+  } catch (e) {
+    return {'error': 'Failed to parse JSON: $e'};
+  }
+}
 
 class GuestListsScreen extends StatefulWidget {
   static const String routeName = '/guestList';
@@ -16,76 +75,109 @@ class GuestListsScreen extends StatefulWidget {
 }
 
 class _GuestListsScreenState extends State<GuestListsScreen> {
-  List<dynamic> guests = [];
-  List<dynamic> filteredGuests = [];
+  List<Guest> guests = [];
+  List<Guest> filteredGuests = [];
   bool isLoading = true;
   String? error;
   String selectedFilter = 'all';
-  
-  // Add new statistics variables
+  final ScrollController _scrollController = ScrollController();
+  bool _isLoadingMore = false;
+  int _currentPage = 1;
+  static const int _pageSize = 20;
+
+  // Statistics variables
   Map<String, dynamic> statistics = {};
   Map<String, dynamic> todayStatistics = {};
   Map<String, dynamic> entryTypes = {};
 
   final TextEditingController _searchController = TextEditingController();
+  Timer? _debounceTimer;
 
   @override
   void initState() {
     super.initState();
+    _scrollController.addListener(_onScroll);
     fetchGuests();
   }
 
   @override
   void dispose() {
+    _scrollController.dispose();
     _searchController.dispose();
+    _debounceTimer?.cancel();
     super.dispose();
   }
 
-  void _filterByType(String type) {
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      _loadMoreGuests();
+    }
+  }
+
+  Future<void> _loadMoreGuests() async {
+    if (_isLoadingMore) return;
+    
     setState(() {
-      selectedFilter = type;
-      if (type == 'all') {
-        filteredGuests = guests;
-      } else if (type == 'active') {
-        filteredGuests = guests.where((guest) => 
-          guest['current_entry'] != null && 
-          guest['current_entry']['is_active'] == true
-        ).toList();
-      } else if (type == 'students') {
-        filteredGuests = guests.where((guest) => guest['is_student'] == true).toList();
-      } else if (type == 'instructors') {
-        filteredGuests = guests.where((guest) => guest['is_instructor'] == true).toList();
-      } else if (type == 'quick_register') {
-        filteredGuests = guests.where((guest) => guest['is_quick_register'] == true).toList();
-      } else if (type == 'individuals') {
-        filteredGuests = guests.where((guest) => 
-          !guest['is_student'] && !guest['is_instructor'] && !guest['is_quick_register']
-        ).toList();
-      }
+      _isLoadingMore = true;
     });
+
+    try {
+      final response = await http.post(
+        Uri.parse(ServerEndpoints.getUsers()),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'page': _currentPage + 1,
+          'per_page': _pageSize,
+        }),
+      ).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        final processedData = await compute(parseJsonData, response.body);
+        
+        if (!mounted) return;
+
+        if (processedData.containsKey('error')) {
+          throw Exception(processedData['error']);
+        }
+
+        setState(() {
+          final newGuests = List<Guest>.from(processedData['all_users']);
+          guests.addAll(newGuests);
+          filteredGuests = guests;
+          _currentPage++;
+          _isLoadingMore = false;
+        });
+      }
+    } catch (e) {
+      if (!mounted) return;
+      _isLoadingMore = false;
+      debugPrint('Error loading more guests: $e');
+    }
   }
 
   void _filterGuests(String query) {
-    setState(() {
-      if (query.isEmpty) {
-        _filterByType(selectedFilter);
-      } else {
-        var typeFiltered = guests;
-        if (selectedFilter != 'all') {
-          typeFiltered = filteredGuests;
-        }
-        
-        filteredGuests = typeFiltered.where((guest) {
-          final name = guest['name']?.toString().toLowerCase() ?? '';
-          final email = guest['email']?.toString().toLowerCase() ?? '';
+    _debounceTimer?.cancel();
+    _debounceTimer = Timer(const Duration(milliseconds: 300), () {
+      if (!mounted) return;
+      
+      setState(() {
+        if (query.isEmpty) {
+          filteredGuests = guests;
+        } else {
           final searchLower = query.toLowerCase();
-          return name.contains(searchLower) || email.contains(searchLower);
-        }).toList();
-      }
+          filteredGuests = guests.where((guest) {
+            return guest.name.toLowerCase().contains(searchLower) ||
+                   guest.email.toLowerCase().contains(searchLower);
+          }).toList();
+        }
+      });
     });
   }
 
   Future<void> fetchGuests() async {
+    if (!mounted) return;
+    
     try {
       setState(() {
         isLoading = true;
@@ -94,45 +186,40 @@ class _GuestListsScreenState extends State<GuestListsScreen> {
 
       final response = await http.post(
         Uri.parse(ServerEndpoints.getUsers()),
-        headers: {
-          'method': 'POST',
-          'Content-Type': 'application/json',
-        },
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'page': 1,
+          'per_page': _pageSize,
+        }),
       ).timeout(const Duration(seconds: 10));
 
+      if (!mounted) return;
+
       if (response.statusCode == 200) {
-        final decodedResponse = json.decode(response.body);
-        final data = decodedResponse['data'];
+        final processedData = await compute(parseJsonData, response.body);
         
+        if (!mounted) return;
+
+        if (processedData.containsKey('error')) {
+          throw Exception(processedData['error']);
+        }
+
         setState(() {
-          // Set all users list
-          guests = data['all_users'];
-          filteredGuests = data['all_users'];
-          
-          // Set statistics
-          statistics = data['statistics'];
-          todayStatistics = data['today_statistics'];
-          entryTypes = data['entry_types'];
-          
+          statistics = Map<String, dynamic>.from(processedData['statistics']);
+          todayStatistics = Map<String, dynamic>.from(processedData['today_statistics']);
+          guests = List<Guest>.from(processedData['all_users']);
+          filteredGuests = guests;
           isLoading = false;
         });
       } else {
+        Fluttertoast.showToast(msg: "Error : Status ${response.statusCode}");
         throw Exception('Failed to load guests: ${response.statusCode}');
       }
-    } on SocketException catch (e) {
-      debugPrint("Socket Exception: $e");
-      setState(() {
-        error = 'Cannot connect to server. Please check your internet connection.';
-        isLoading = false;
-      });
-    } on TimeoutException catch (e) {
-      debugPrint("Timeout Exception: $e");
-      setState(() {
-        error = 'Connection timed out. Please try again.';
-        isLoading = false;
-      });
     } catch (e) {
-      debugPrint("Error fetching guests: $e");
+      if (!mounted) return;
+      
+      Fluttertoast.showToast(msg: "Error : ${e.toString()}");
+      debugPrint(e.toString());
       setState(() {
         error = 'Failed to connect to server. Please try again later.';
         isLoading = false;
@@ -195,46 +282,78 @@ class _GuestListsScreenState extends State<GuestListsScreen> {
                 ),
               ),
             ),
-            SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildHeaderCard(),
-                  _buildQuickStats(),
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: TextField(
-                      controller: _searchController,
-                      onChanged: _filterGuests,
-                      decoration: InputDecoration(
-                        hintText: 'Search by name or email',
-                        prefixIcon: const Icon(Icons.search),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                            color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+            RefreshIndicator(
+              onRefresh: fetchGuests,
+              child: CustomScrollView(
+                controller: _scrollController,
+                slivers: [
+                  SliverToBoxAdapter(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildHeaderCard(),
+                        _buildStatistics(),
+                        Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: TextField(
+                            controller: _searchController,
+                            onChanged: _filterGuests,
+                            decoration: InputDecoration(
+                              hintText: 'Search by name or email',
+                              prefixIcon: const Icon(Icons.search),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+                                ),
+                              ),
+                              filled: true,
+                              fillColor: Colors.white,
+                            ),
                           ),
                         ),
-                        filled: true,
-                        fillColor: Colors.white,
-                      ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Text(
+                            'All Guests',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1A237E),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Text(
-                      'All Guests',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF1A237E),
-                      ),
+                  SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        if (index >= filteredGuests.length) {
+                          if (_isLoadingMore) {
+                            return const Center(
+                              child: Padding(
+                                padding: EdgeInsets.all(16.0),
+                                child: CircularProgressIndicator(),
+                              ),
+                            );
+                          }
+                          return null;
+                        }
+
+                        final guest = filteredGuests[index];
+                        return _buildGuestCard(guest);
+                      },
+                      childCount: filteredGuests.length + (_isLoadingMore ? 1 : 0),
                     ),
                   ),
-                  _buildGuestList(),
                 ],
               ),
             ),
+            if (isLoading)
+              const Center(
+                child: CircularProgressIndicator(),
+              ),
           ],
         ),
       ),
@@ -293,77 +412,39 @@ class _GuestListsScreenState extends State<GuestListsScreen> {
     );
   }
 
-  Widget _buildQuickStats() {
+  Widget _buildStatistics() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
+      child: Row(
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: _buildStatCard(
-                  'Total Guests',
-                  statistics['total_users']?.toString() ?? '0',
-                  Icons.people,
-                  Colors.green,
-                  'all',
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildStatCard(
-                  'Active Entries',
-                  todayStatistics['active_entries']?.toString() ?? '0',
-                  Icons.today,
-                  Colors.orange,
-                  'active',
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildStatCard(
-                  'Quick Register',
-                  statistics['total_quick_register']?.toString() ?? '0',
-                  Icons.flash_on,
-                  Colors.blue,
-                  'quick_register',
-                ),
-              ),
-            ],
+          Expanded(
+            child: _buildStatCard(
+              'Total Guests',
+              statistics['total_users']?.toString() ?? '0',
+              Icons.people,
+              Colors.green,
+              'all',
+            ),
           ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              // Expanded(
-              //   child: _buildStatCard(
-              //     'Students',
-              //     statistics['total_students']?.toString() ?? '0',
-              //     Icons.school,
-              //     Colors.purple,
-              //     'students',
-              //   ),
-              // ),
-              // const SizedBox(width: 12),
-              Expanded(
-                child: _buildStatCard(
-                  'Group Leader',
-                  statistics['total_instructors']?.toString() ?? '0',
-                  Icons.person_2,
-                  Colors.indigo,
-                  'instructors',
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildStatCard(
-                  'Individual Guests',
-                  statistics['total_individual_guests']?.toString() ?? '0',
-                  Icons.person_outline,
-                  Colors.teal,
-                  'individuals',
-                ),
-              ),
-            ],
+          const SizedBox(width: 12),
+          Expanded(
+            child: _buildStatCard(
+              'Active Users',
+              statistics['total_entries']?.toString() ?? '0',
+              Icons.person,
+              Colors.orange,
+              'active',
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: _buildStatCard(
+              'Today\'s Entries',
+              todayStatistics['total_entries']?.toString() ?? '0',
+              Icons.today,
+              Colors.blue,
+              'today',
+            ),
           ),
         ],
       ),
@@ -371,296 +452,144 @@ class _GuestListsScreenState extends State<GuestListsScreen> {
   }
 
   Widget _buildStatCard(String title, String value, IconData icon, Color color, String filterType) {
-    bool isSelected = selectedFilter == filterType;
-    
-    return InkWell(
-      onTap: () => _filterByType(filterType),
-      child: Card(
-        elevation: isSelected ? 6 : 2,
-        color: isSelected ? color.withOpacity(0.2) : Theme.of(context).colorScheme.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: BorderSide(
-            color: isSelected ? color : Theme.of(context).colorScheme.outline.withOpacity(0.2),
-            width: isSelected ? 2 : 1,
-          ),
+    return Card(
+      elevation: 2,
+      color: Theme.of(context).colorScheme.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+          width: 1,
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              Icon(
-                icon,
-                color: isSelected ? color : color.withOpacity(0.8),
-                size: 28,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            Icon(
+              icon,
+              color: color,
+              size: 28,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: color,
               ),
-              const SizedBox(height: 8),
-              Text(
-                value,
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: isSelected ? color : Theme.of(context).colorScheme.primary,
-                ),
+            ),
+            Text(
+              title,
+              style: TextStyle(
+                color: color,
+                fontSize: 12,
+                fontWeight: FontWeight.normal,
               ),
-              Text(
-                title,
-                style: TextStyle(
-                  color: isSelected 
-                    ? color 
-                    : Theme.of(context).colorScheme.onSurfaceVariant,
-                  fontSize: 12,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
+              textAlign: TextAlign.center,
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildGuestList() {
-    if (isLoading) {
-      return Center(child: CircularProgressIndicator(
-        color: Theme.of(context).colorScheme.primary,
-      ));
-    }
-
-    return ListView.builder(
-      physics: const NeverScrollableScrollPhysics(),
-      shrinkWrap: true,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      itemCount: filteredGuests.length,
-      itemBuilder: (context, index) {
-        final guest = filteredGuests[index];
-        final bool isQuickRegister = guest['is_quick_register'] ?? false;
-        final bool isActive = guest['current_entry'] != null && 
-                            guest['current_entry']['is_active'] == true;
-        final String? entryType = guest['current_entry']?['entry_type'];
-        
-        // Fix duration type conversion
-        final dynamic rawDuration = guest['current_entry']?['duration_minutes'];
-        final double? duration = rawDuration != null ? 
-            (rawDuration is int ? rawDuration.toDouble() : rawDuration as double) : 
-            null;
-
-        return Card(
-          elevation: 0,
-          color: Theme.of(context).colorScheme.surface,
-          margin: const EdgeInsets.only(bottom: 12),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-            side: BorderSide(color: Theme.of(context).colorScheme.outline.withOpacity(0.2)),
+  Widget _buildGuestCard(Guest guest) {
+    return Card(
+      elevation: 0,
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: Colors.grey.withOpacity(0.2),
+        ),
+      ),
+      child: ListTile(
+        contentPadding: const EdgeInsets.all(16),
+        leading: CircleAvatar(
+          backgroundColor: const Color(0xFF1A237E).withOpacity(0.1),
+          child: const Icon(
+            Icons.person_outline,
+            color: Color(0xFF1A237E),
           ),
-          child: ListTile(
-            contentPadding: const EdgeInsets.all(16),
-            leading: CircleAvatar(
-              backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-              child: Icon(
-                Icons.person_outline,
-                color: Theme.of(context).colorScheme.primary,
+        ),
+        title: Text(
+          guest.name,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF1A237E),
+          ),
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              guest.email,
+              style: TextStyle(color: Colors.grey[600]),
+            ),
+            Text(
+              'Institution: ${guest.institutionName}',
+              style: TextStyle(
+                color: Colors.grey[600],
+                fontSize: 12,
               ),
             ),
-            title: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        guest['name'] ?? 'N/A',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                      ),
-                      Wrap( // Replace Row with Wrap to fix overflow
-                        spacing: 8, // horizontal spacing between items
-                        runSpacing: 4, // vertical spacing between lines
-                        children: [
-                          if (isActive)
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.green.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(
-                                    Icons.circle,
-                                    size: 8,
-                                    color: Colors.green,
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    'Active',
-                                    style: TextStyle(
-                                      color: Colors.green,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          if (isActive && entryType != null)
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.blue.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Text(
-                                entryType.replaceAll('_', ' ').toUpperCase(),
-                                style: TextStyle(
-                                  color: Colors.blue,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                          if (isQuickRegister)
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.orange.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: const Text(
-                                'Quick Register',
-                                style: TextStyle(
-                                  color: Colors.orange,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                          if (guest['is_student'] == true)
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.blue.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: const Text(
-                                'Student',
-                                style: TextStyle(
-                                  color: Colors.blue,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                          if (guest['is_instructor'] == true)
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.purple.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: const Text(
-                                'Group Leader',
-                                style: TextStyle(
-                                  color: Colors.purple,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            Row(
               children: [
                 Text(
-                  guest['email'] ?? 'No email',
-                  style: TextStyle(color: Colors.grey[600]),
-                ),
-                if (guest['unique_id_type'] != null && guest['unique_id'] != null)
-                  Text(
-                    '${guest['unique_id_type']}: ${guest['unique_id']}',
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                      fontSize: 12,
-                    ),
+                  'Created: ${_formatDate(guest.createdAt)}',
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontSize: 12,
                   ),
-                Row(
-                  children: [
-                    Text(
-                      'Created: ${_formatDate(guest['created_at'])}',
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 12,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Icon(Icons.login, size: 12, color: Colors.grey[600]),
-                    Text(
-                      ' Entries: ${guest['count_of_entries'] ?? 0}',
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
                 ),
-                if (isActive && duration != null) ...[
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Icon(Icons.timer_outlined, size: 12, color: Colors.grey[600]),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Duration: ${duration.toStringAsFixed(1)} mins',
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 12,
+                const SizedBox(width: 8),
+                if (guest.entryExist)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.circle,
+                          size: 8,
+                          color: Colors.green,
                         ),
-                      ),
-                    ],
+                        SizedBox(width: 4),
+                        Text(
+                          'Active',
+                          style: TextStyle(
+                            color: Colors.green,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ],
               ],
             ),
-            trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-            onTap: (){ 
-              // Fluttertoast.showToast(msg: 'Guest ID: ${guest['id']}');
-              Navigator.pushNamed(
-              context,
-              ViewGuestScreen.routeName,
-              arguments: {
-                'userId': guest['id'],
-                'isQuickRegister': isQuickRegister,
-              },
-            );
+          ],
+        ),
+        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+        onTap: () {
+          Navigator.pushNamed(
+            context,
+            ViewGuestScreen.routeName,
+            arguments: {
+              'userId': guest.id,
             },
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 

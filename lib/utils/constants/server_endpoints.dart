@@ -1,14 +1,19 @@
 class ServerEndpoints {
   // Base URL
   static const String baseUrl = 'https://api.vmsbutu.it.com';
+  // static const String baseUrl = 'https://enabled-flowing-bedbug.ngrok-free.app';
 
 
   static String getGroupVerify() => '$baseUrl/face_recognition/group_entry';
   // User Management Endpoints
   static String createUser() => '$baseUrl/create_user';
   static String getUsers() => '$baseUrl/users/all';
-  static String getUserById(int userId, bool isQuickRegister) => '$baseUrl/users/$userId?is_quick_register=$isQuickRegister';
+  static String getUserById(int userId) => '$baseUrl/users/$userId';
   static String verifyUser() => '$baseUrl/app_users/verify';
+  static String registerUser() => '$baseUrl/app_users/create';
+  static String captureFace() => '$baseUrl/face_capture/capture';
+  static String listOfImages() => "$baseUrl/users/image/all";
+  static String getImage() => '$baseUrl/users/image/';
   // QR Code Related Endpoints
   static String getQrCode(int userId) => '$baseUrl/qr/$userId';
   static String scanQr() => '$baseUrl/qr/scan_qr';
@@ -18,6 +23,8 @@ class ServerEndpoints {
   static String logFaceRecognition() => '$baseUrl/face_recognition';
   static String getFaceRecognitionHistory(int userId) => '$baseUrl/face_recognition/$userId';
   static String verifyFaceRecognition() => '$baseUrl/face_recognition/verify';
+  static String getFood() => '$baseUrl/food';
+  static String scanFood() => '$baseUrl/food/add';
 
   static String getStudentList() => '$baseUrl/qr/group_entry';
 

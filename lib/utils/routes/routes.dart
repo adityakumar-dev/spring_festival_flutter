@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:page_transition/page_transition.dart';
+import 'package:spring_admin/screens/food/food_screen.dart';
 import 'package:spring_admin/screens/login/login.dart';
 import 'package:spring_admin/screens/new%20entry/face_verification.dart';
 import 'package:spring_admin/screens/new%20entry/qr_code_verify.dart';
+import 'package:spring_admin/screens/register/register_screen.dart';
 import 'package:spring_admin/screens/splash/splash_screen.dart';
 // import 'package:spring_admin/screens/registration/quick_registration.dart';
 
@@ -40,8 +42,7 @@ class AppRoutes {
         final args = settings.arguments as Map<String, dynamic>;
         return getPageTransition(FaceVerificationScreen(
           userId: args['userId'] as int,
-          operationType: args['operationType'] as String,
-          studentIds: args['studentIds'] as List<int>?
+          
         ), settings);
       case SuccessScreen.routeName:
         return MaterialPageRoute(builder: (_) => const SuccessScreen());
@@ -51,15 +52,19 @@ class AppRoutes {
         return MaterialPageRoute(
           builder: (_) => ViewGuestScreen(
             userId: args['userId'] as int,
-            isQuickRegister: args['isQuickRegister'] as bool,
+            // isQuickRegister: args['isQuickRegister'] as bool,
           ),
         );
+      case FoodScreen.routeName:
+        return getPageTransition(FoodScreen(), settings);
       case ManualEntryScreen.routeName:
         return MaterialPageRoute(builder: (_) => const ManualEntryScreen());
       case SplashScreen.routeName:
         return MaterialPageRoute(builder: (_) => const SplashScreen());
       case LoginScreen.routeName:
         return MaterialPageRoute(builder: (_) => const LoginScreen());
+      case RegisterScreen.routeName:
+        return MaterialPageRoute(builder: (_) => const RegisterScreen());
       // case QuickRegistration.routeName:
       //   return MaterialPageRoute(builder: (_) => const QuickRegistration());
       default:

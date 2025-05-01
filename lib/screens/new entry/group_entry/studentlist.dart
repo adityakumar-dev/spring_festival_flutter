@@ -139,12 +139,12 @@ class _StudentListScreenState extends State<StudentListScreen> {
                   ids.add(id);
                 }
                 if(int.tryParse(widget.userId) != null){
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => FaceVerificationScreen(userId: int.tryParse(widget.userId) ?? 0, operationType: 'group', studentIds: ids),
-                  ),
-                );
+                // Navigator.push(
+                //   context,
+                //   MaterialPageRoute(
+                //     builder: (context) => FaceVerificationScreen(userId: int.tryParse(widget.userId) ?? 0, operationType: 'group', studentIds: ids),
+                //   ),
+                // );
                 }else{
                   Fluttertoast.showToast(
                     msg: 'User ID is not a valid integer',

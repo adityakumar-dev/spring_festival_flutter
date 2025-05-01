@@ -1,4 +1,4 @@
-package com.example.spring_admin
+package com.vmsbutu.aiems;
 
 import io.flutter.embedding.android.FlutterActivity
 
