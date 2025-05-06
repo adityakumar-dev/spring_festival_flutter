@@ -14,7 +14,7 @@ import '../../utils/constants/server_endpoints.dart';
 
 class ViewGuestScreen extends StatefulWidget {
   static const String routeName = '/viewGuest';
-  final int userId;
+  final String userId;
 
   const ViewGuestScreen({
     super.key,
@@ -53,7 +53,6 @@ class _ViewGuestScreenState extends State<ViewGuestScreen> {
       if (response.statusCode == 200) {
         final decodedData = json.decode(response.body) as Map<String, dynamic>?;
         
-        // Validate required fields
         if (decodedData?['user'] == null) {
           throw Exception('Invalid response: missing user data');
         }
@@ -232,11 +231,28 @@ class _ViewGuestScreenState extends State<ViewGuestScreen> {
             'Email: ${user['email'] ?? 'No email'}',
             style: TextStyle(color: Colors.grey[600]),
           ),
+          // const SizedBox(height: 8),
+          // Text(
+          //   'Institution: ${user['institution_name'] ?? 'N/A'}',
+          //   style: TextStyle(color: Colors.grey[600]),
+          // ),
           const SizedBox(height: 8),
           Text(
-            'Institution: ${user['institution_name'] ?? 'N/A'}',
+            'ID Type: ${user['id_type']?.toUpperCase() ?? 'N/A'}',
             style: TextStyle(color: Colors.grey[600]),
           ),
+          const SizedBox(height: 8),
+          Text(
+            'ID Number: ${user['id'] ?? 'N/A'}',
+            style: TextStyle(color: Colors.grey[600]),
+          ),
+          if (user['group_name'] != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              'Group: ${user['group_name']} (${user['count']} members)',
+              style: TextStyle(color: Colors.grey[600]),
+            ),
+          ],
           const SizedBox(height: 8),
           Text(
             'Created At: ${formatDate(user['created_at'])}',
@@ -330,16 +346,13 @@ class _ViewGuestScreenState extends State<ViewGuestScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder:
-          (context) => DraggableScrollableSheet(
-            initialChildSize: 0.6,
-            minChildSize: 0.3,
-            maxChildSize: 0.9,
-            expand: false,
-            builder:
-                (context, scrollController) =>
-                    _buildDetailedHistory(scrollController),
-          ),
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.6,
+        minChildSize: 0.3,
+        maxChildSize: 0.9,
+        expand: false,
+        builder: (context, scrollController) => _buildDetailedHistory(scrollController),
+      ),
     );
   }
 

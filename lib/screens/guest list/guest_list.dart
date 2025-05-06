@@ -12,56 +12,89 @@ import '../../utils/constants/server_endpoints.dart';
 
 // Define a Guest model for better type safety and performance
 class Guest {
-  final int id;
+  final int user_id;
+  final String id;
   final String name;
   final String email;
-  final String institutionName;
-  final String contactNumber;
-  final String createdAt;
-  final bool entryExist;
   final String? imagePath;
-  final String? qrCode;
+  final String? groupName;
+  final String count;
+  final String idType;
+  final String createdAt;
+  final bool hasEntryToday;
+  final bool faceCaptured;
+  final String? latestEntry;
 
   Guest({
+    required this.user_id,
     required this.id,
     required this.name,
     required this.email,
-    required this.institutionName,
-    required this.contactNumber,
-    required this.createdAt,
-    required this.entryExist,
     this.imagePath,
-    this.qrCode,
+    this.groupName,
+    required this.count,
+    required this.idType,
+    required this.createdAt,
+    required this.hasEntryToday,
+    required this.faceCaptured,
+    this.latestEntry,
   });
 
   factory Guest.fromJson(Map<String, dynamic> json) {
-    return Guest(
-      id: json['id'],
-      name: json['name'] ?? '',
-      email: json['email'] ?? '',
-      institutionName: json['institution_name'] ?? '',
-      contactNumber: json['contact_number'] ?? '',
-      createdAt: json['created_at'] ?? '',
-      entryExist: json['entry_status']['has_entry_today'] ?? false,
-      imagePath: json['image_path'],
-      qrCode: json['qr_code'],
-    );
+    try {
+      return Guest(
+        user_id: json['user_id'] as int,
+        id: json['id']?.toString() ?? '',
+        name: json['name']?.toString() ?? '',
+        email: json['email']?.toString() ?? '',
+        imagePath: json['image_path'],
+        groupName: json['group_name'],
+        count: json['count']?.toString() ?? '1',
+        idType: json['id_type']?.toString() ?? '',
+        createdAt: json['created_at']?.toString() ?? '',
+        hasEntryToday: json['entry_status']?['has_entry_today'] ?? false,
+        faceCaptured: json['entry_status']?['face_captured'] ?? false,
+        latestEntry: json['entry_status']?['latest_entry']?.toString(),
+      );
+    } catch (e, stackTrace) {
+      debugPrint('Error creating Guest from JSON: $e');
+      debugPrint('JSON data: ${json.toString()}');
+      debugPrint('Stack trace: $stackTrace');
+      rethrow;
+    }
   }
 }
 
 Future<Map<String, dynamic>> parseJsonData(String body) async {
   try {
+    debugPrint('Response body: $body');
     final parsedData = json.decode(body);
-    final data = parsedData['data'];
     
+    if (parsedData['status'] != 'success') {
+      throw Exception('API returned error status: ${parsedData['message']}');
+    }
+
+    final data = parsedData['data'];
+    if (data == null) {
+      throw Exception('Data field is null in response');
+    }
+
+    final allUsers = (data['all_users'] as List?)?.map((user) {
+      debugPrint('Processing user: ${json.encode(user)}');
+      return Guest.fromJson(user);
+    }).toList() ?? [];
+
+    final statistics = data['statistics'] as Map<String, dynamic>? ?? {};
+    final todayStatistics = data['today_statistics'] as Map<String, dynamic>? ?? {};
+
     return {
-      'statistics': Map<String, dynamic>.from(data['statistics']),
-      'today_statistics': Map<String, dynamic>.from(data['today_statistics']),
-      'all_users': (data['all_users'] as List)
-          .map((user) => Guest.fromJson(user))
-          .toList(),
+      'statistics': statistics,
+      'today_statistics': todayStatistics,
+      'all_users': allUsers,
     };
-  } catch (e) {
+  } catch (e, stackTrace) {
+    debugPrint('Error parsing JSON: $e');
+    debugPrint('Stack trace: $stackTrace');
     return {'error': 'Failed to parse JSON: $e'};
   }
 }
@@ -75,6 +108,7 @@ class GuestListsScreen extends StatefulWidget {
 }
 
 class _GuestListsScreenState extends State<GuestListsScreen> {
+  final Set<String> _loadedGuestIds = {};
   List<Guest> guests = [];
   List<Guest> filteredGuests = [];
   bool isLoading = true;
@@ -84,6 +118,7 @@ class _GuestListsScreenState extends State<GuestListsScreen> {
   bool _isLoadingMore = false;
   int _currentPage = 1;
   static const int _pageSize = 20;
+  bool _hasMoreData = true;
 
   // Statistics variables
   Map<String, dynamic> statistics = {};
@@ -116,21 +151,35 @@ class _GuestListsScreenState extends State<GuestListsScreen> {
   }
 
   Future<void> _loadMoreGuests() async {
-    if (_isLoadingMore) return;
+    if (_isLoadingMore || !_hasMoreData) return;
     
     setState(() {
       _isLoadingMore = true;
     });
 
+    final client = http.Client();
     try {
-      final response = await http.post(
+      final response = await client.post(
         Uri.parse(ServerEndpoints.getUsers()),
-        headers: {'Content-Type': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
         body: json.encode({
           'page': _currentPage + 1,
           'per_page': _pageSize,
         }),
-      ).timeout(const Duration(seconds: 10));
+      ).timeout(
+        const Duration(seconds: 30),
+        onTimeout: () {
+          throw TimeoutException('The connection has timed out, please try again!');
+        },
+      );
+
+      if (!mounted) return;
+
+      debugPrint('Load more response status: ${response.statusCode}');
+      debugPrint('Load more response body: ${response.body}');
 
       if (response.statusCode == 200) {
         final processedData = await compute(parseJsonData, response.body);
@@ -141,18 +190,44 @@ class _GuestListsScreenState extends State<GuestListsScreen> {
           throw Exception(processedData['error']);
         }
 
+        final newGuests = List<Guest>.from(processedData['all_users']);
+        
+        // Filter out duplicates
+        final uniqueNewGuests = newGuests.where((guest) {
+          final isNew = !_loadedGuestIds.contains(guest.id);
+          if (isNew) {
+            _loadedGuestIds.add(guest.id);
+          }
+          return isNew;
+        }).toList();
+
         setState(() {
-          final newGuests = List<Guest>.from(processedData['all_users']);
-          guests.addAll(newGuests);
-          filteredGuests = guests;
-          _currentPage++;
+          if (uniqueNewGuests.isEmpty) {
+            _hasMoreData = false;
+          } else {
+            guests.addAll(uniqueNewGuests);
+            _filterGuests(_searchController.text);
+            _currentPage++;
+          }
           _isLoadingMore = false;
         });
+      } else {
+        throw HttpException('Server returned ${response.statusCode}: ${response.body}');
       }
     } catch (e) {
       if (!mounted) return;
-      _isLoadingMore = false;
       debugPrint('Error loading more guests: $e');
+      setState(() {
+        _isLoadingMore = false;
+        _hasMoreData = false;
+      });
+      Fluttertoast.showToast(
+        msg: "Error loading more guests: ${e.toString()}",
+        backgroundColor: Colors.red,
+        textColor: Colors.white,
+      );
+    } finally {
+      client.close();
     }
   }
 
@@ -163,7 +238,7 @@ class _GuestListsScreenState extends State<GuestListsScreen> {
       
       setState(() {
         if (query.isEmpty) {
-          filteredGuests = guests;
+          filteredGuests = List.from(guests); // Create a new list to avoid reference issues
         } else {
           final searchLower = query.toLowerCase();
           filteredGuests = guests.where((guest) {
@@ -182,47 +257,100 @@ class _GuestListsScreenState extends State<GuestListsScreen> {
       setState(() {
         isLoading = true;
         error = null;
+        _loadedGuestIds.clear();
+        _hasMoreData = true;
+        _currentPage = 1;
       });
 
-      final response = await http.post(
-        Uri.parse(ServerEndpoints.getUsers()),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({
-          'page': 1,
-          'per_page': _pageSize,
-        }),
-      ).timeout(const Duration(seconds: 10));
+      final client = http.Client();
+      try {
+        Fluttertoast.showToast(msg: "Get : ${ServerEndpoints.getUsers()}");
+        final response = await client.post(
+          Uri.parse(ServerEndpoints.getUsers()),
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+          body: json.encode({
+            'page': 1,
+            'per_page': _pageSize,
+          }),
+        ).timeout(
+          const Duration(seconds: 10),
+          onTimeout: () {
+            throw TimeoutException('The connection has timed out, please try again!');
+          },
+        );
 
-      if (!mounted) return;
-
-      if (response.statusCode == 200) {
-        final processedData = await compute(parseJsonData, response.body);
-        
         if (!mounted) return;
 
-        if (processedData.containsKey('error')) {
-          throw Exception(processedData['error']);
-        }
+        debugPrint('Response status: ${response.statusCode}');
+        debugPrint('Response body: ${response.body}');
 
-        setState(() {
-          statistics = Map<String, dynamic>.from(processedData['statistics']);
-          todayStatistics = Map<String, dynamic>.from(processedData['today_statistics']);
-          guests = List<Guest>.from(processedData['all_users']);
-          filteredGuests = guests;
-          isLoading = false;
-        });
-      } else {
-        Fluttertoast.showToast(msg: "Error : Status ${response.statusCode}");
-        throw Exception('Failed to load guests: ${response.statusCode}');
+        if (response.statusCode == 200) {
+          final processedData = await compute(parseJsonData, response.body);
+          
+          if (!mounted) return;
+
+          if (processedData.containsKey('error')) {
+            throw Exception(processedData['error']);
+          }
+
+          final newGuests = List<Guest>.from(processedData['all_users']);
+          
+          // Add all guest IDs to the set
+          _loadedGuestIds.addAll(newGuests.map((guest) => guest.id));
+
+          setState(() {
+            statistics = Map<String, dynamic>.from(processedData['statistics']);
+            todayStatistics = Map<String, dynamic>.from(processedData['today_statistics']);
+            guests = newGuests;
+            filteredGuests = newGuests;
+            isLoading = false;
+            _hasMoreData = newGuests.length >= _pageSize;
+          });
+        } else {
+          throw HttpException('Server returned ${response.statusCode}: ${response.body}');
+        }
+      } finally {
+        client.close();
       }
+    } on TimeoutException catch (e) {
+      if (!mounted) return;
+      Fluttertoast.showToast(
+        msg: "Connection timeout. Please check your internet connection.",
+        backgroundColor: Colors.red,
+        textColor: Colors.white,
+      );
+      setState(() {
+        error = 'Connection timeout. Please try again.';
+        isLoading = false;
+        _hasMoreData = false;
+      });
+    } on HttpException catch (e) {
+      if (!mounted) return;
+      Fluttertoast.showToast(
+        msg: "Server error: ${e.message}",
+        backgroundColor: Colors.red,
+        textColor: Colors.white,
+      );
+      setState(() {
+        error = 'Server error: ${e.message}';
+        isLoading = false;
+        _hasMoreData = false;
+      });
     } catch (e) {
       if (!mounted) return;
-      
-      Fluttertoast.showToast(msg: "Error : ${e.toString()}");
-      debugPrint(e.toString());
+      debugPrint('Error in fetchGuests: $e');
+      Fluttertoast.showToast(
+        msg: "Error: ${e.toString()}",
+        backgroundColor: Colors.red,
+        textColor: Colors.white,
+      );
       setState(() {
         error = 'Failed to connect to server. Please try again later.';
         isLoading = false;
+        _hasMoreData = false;
       });
     }
   }
@@ -338,13 +466,21 @@ class _GuestListsScreenState extends State<GuestListsScreen> {
                               ),
                             );
                           }
+                          if (!_hasMoreData) {
+                            return const Center(
+                              child: Padding(
+                                padding: EdgeInsets.all(16.0),
+                                child: Text('No more guests to load'),
+                              ),
+                            );
+                          }
                           return null;
                         }
 
                         final guest = filteredGuests[index];
                         return _buildGuestCard(guest);
                       },
-                      childCount: filteredGuests.length + (_isLoadingMore ? 1 : 0),
+                      childCount: filteredGuests.length + (_isLoadingMore || !_hasMoreData ? 1 : 0),
                     ),
                   ),
                 ],
@@ -429,7 +565,7 @@ class _GuestListsScreenState extends State<GuestListsScreen> {
           const SizedBox(width: 12),
           Expanded(
             child: _buildStatCard(
-              'Active Users',
+              'Total Entries',
               statistics['total_entries']?.toString() ?? '0',
               Icons.person,
               Colors.orange,
@@ -439,8 +575,8 @@ class _GuestListsScreenState extends State<GuestListsScreen> {
           const SizedBox(width: 12),
           Expanded(
             child: _buildStatCard(
-              'Today\'s Entries',
-              todayStatistics['total_entries']?.toString() ?? '0',
+              'Active Today',
+              todayStatistics['active_entries']?.toString() ?? '0',
               Icons.today,
               Colors.blue,
               'today',
@@ -509,10 +645,13 @@ class _GuestListsScreenState extends State<GuestListsScreen> {
         contentPadding: const EdgeInsets.all(16),
         leading: CircleAvatar(
           backgroundColor: const Color(0xFF1A237E).withOpacity(0.1),
-          child: const Icon(
+          backgroundImage: guest.imagePath != null 
+              ? NetworkImage('${ServerEndpoints.baseUrl}/${guest.imagePath}')
+              : null,
+          child: guest.imagePath == null ? const Icon(
             Icons.person_outline,
             color: Color(0xFF1A237E),
-          ),
+          ) : null,
         ),
         title: Text(
           guest.name,
@@ -528,8 +667,8 @@ class _GuestListsScreenState extends State<GuestListsScreen> {
               guest.email,
               style: TextStyle(color: Colors.grey[600]),
             ),
-            Text(
-              'Institution: ${guest.institutionName}',
+            if (guest.groupName != null) Text(
+              'Group: ${guest.groupName} (${guest.count} members)',
               style: TextStyle(
                 color: Colors.grey[600],
                 fontSize: 12,
@@ -537,6 +676,22 @@ class _GuestListsScreenState extends State<GuestListsScreen> {
             ),
             Row(
               children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    guest.idType.toUpperCase(),
+                    style: const TextStyle(
+                      color: Colors.blue,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
                 Text(
                   'Created: ${_formatDate(guest.createdAt)}',
                   style: TextStyle(
@@ -544,8 +699,11 @@ class _GuestListsScreenState extends State<GuestListsScreen> {
                     fontSize: 12,
                   ),
                 ),
-                const SizedBox(width: 8),
-                if (guest.entryExist)
+              ],
+            ),
+            Row(
+              children: [
+                if (guest.hasEntryToday)
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 8,
@@ -565,7 +723,7 @@ class _GuestListsScreenState extends State<GuestListsScreen> {
                         ),
                         SizedBox(width: 4),
                         Text(
-                          'Active',
+                          'Active Today',
                           style: TextStyle(
                             color: Colors.green,
                             fontSize: 12,
@@ -575,6 +733,38 @@ class _GuestListsScreenState extends State<GuestListsScreen> {
                       ],
                     ),
                   ),
+                if (guest.faceCaptured) ...[
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.face,
+                          size: 12,
+                          color: Colors.orange,
+                        ),
+                        SizedBox(width: 4),
+                        Text(
+                          'Face Captured',
+                          style: TextStyle(
+                            color: Colors.orange,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ],
             ),
           ],
@@ -585,7 +775,7 @@ class _GuestListsScreenState extends State<GuestListsScreen> {
             context,
             ViewGuestScreen.routeName,
             arguments: {
-              'userId': guest.id,
+              'userId': guest.user_id.toString(),
             },
           );
         },

@@ -25,28 +25,206 @@ class _QuickRegisterScreenState extends State<QuickRegisterScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
- final _contactController = TextEditingController();
- final _instituteController = TextEditingController();
- String visitor_card_path = '';
-  // Update ID types map with correct server keys
-  // final Map<String, String> _idTypesMap = {
-  //   'Aadhar': 'aadhar',
-  //   'PAN': 'pan',
-  //   'Driving License': 'driving_license',
-  //   'Voter ID': 'voter_id',
-  //   'Passport': 'passport',
-  // };
-
-  // final List<String> _idTypes = [
-  //   'Aadhar',
-  //   'PAN',
-  //   'Driving License',
-  //   'Voter ID',
-  //   'Passport',
-  // ];
+  final _idController = TextEditingController();
+  final _groupNameController = TextEditingController();
+  final _countController = TextEditingController();
+  String _selectedIdType = 'aadhar';
+  String _registrationType = 'individual';
+  final List<String> _idTypes = [
+    'aadhar',
+    'pan',
+    'driving_license',
+    'voter_id',
+    'passport',
+  ];
   bool isLoading = false;
   String? error;
-  // String _selectedUserType = 'individual';
+  String visitor_card_path = '';
+
+  Widget _buildRegistrationTypeSelector() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Registration Type',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF1A237E),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _registrationType = 'individual';
+                    _groupNameController.clear();
+                    _countController.clear();
+                  });
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  decoration: BoxDecoration(
+                    color: _registrationType == 'individual'
+                        ? const Color.fromARGB(255, 10, 128, 120)
+                        : Colors.grey.shade50,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: _registrationType == 'individual'
+                          ? const Color.fromARGB(255, 10, 128, 120)
+                          : Colors.grey.shade200,
+                    ),
+                    boxShadow: _registrationType == 'individual'
+                        ? [
+                            BoxShadow(
+                              color: const Color.fromARGB(255, 10, 128, 120).withOpacity(0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 4),
+                            )
+                          ]
+                        : null,
+                  ),
+                  child: Column(
+                    children: [
+                      Icon(
+                        Icons.person,
+                        size: 24,
+                        color: _registrationType == 'individual'
+                            ? Colors.white
+                            : Colors.grey.shade400,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Individual',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: _registrationType == 'individual'
+                              ? Colors.white
+                              : Colors.grey.shade600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _registrationType = 'group';
+                  });
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  decoration: BoxDecoration(
+                    color: _registrationType == 'group'
+                        ? const Color.fromARGB(255, 10, 128, 120)
+                        : Colors.grey.shade50,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: _registrationType == 'group'
+                          ? const Color.fromARGB(255, 10, 128, 120)
+                          : Colors.grey.shade200,
+                    ),
+                    boxShadow: _registrationType == 'group'
+                        ? [
+                            BoxShadow(
+                              color: const Color.fromARGB(255, 10, 128, 120).withOpacity(0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 4),
+                            )
+                          ]
+                        : null,
+                  ),
+                  child: Column(
+                    children: [
+                      Icon(
+                        Icons.group,
+                        size: 24,
+                        color: _registrationType == 'group'
+                            ? Colors.white
+                            : Colors.grey.shade400,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Group',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: _registrationType == 'group'
+                              ? Colors.white
+                              : Colors.grey.shade600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildIdTypeDropdown() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'ID Type',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF1A237E),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.grey.shade50,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey.shade200),
+          ),
+          child: DropdownButtonFormField<String>(
+            value: _selectedIdType,
+            isExpanded: true,
+            decoration: InputDecoration(
+              prefixIcon: const Icon(
+                Icons.badge_outlined,
+                color: Color.fromARGB(255, 10, 128, 120),
+              ),
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+            ),
+            alignment: AlignmentDirectional.center,
+            items: _idTypes.map((String type) {
+              return DropdownMenuItem<String>(
+                value: type,
+                child: Text(
+                  type.replaceAll('_', ' ').toUpperCase(),
+                  style: TextStyle(color: Colors.grey.shade800),
+                  textAlign: TextAlign.center,
+                ),
+              );
+            }).toList(),
+            onChanged: (String? newValue) {
+              setState(() {
+                _selectedIdType = newValue!;
+              });
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final cameraProvider = Provider.of<CameraSettingsProvider>(context);
@@ -85,7 +263,6 @@ class _QuickRegisterScreenState extends State<QuickRegisterScreen> {
       ),
       body: Stack(
         children: [
-          // Background decoration
           Positioned(
             bottom: -190,
             left: 150,
@@ -99,11 +276,9 @@ class _QuickRegisterScreenState extends State<QuickRegisterScreen> {
               ),
             ),
           ),
-          // Main content
           SingleChildScrollView(
             child: Column(
               children: [
-                // _buildHeaderCard(),
                 Padding(
                   padding: const EdgeInsets.all(20.0),
                   child: ClipRRect(
@@ -140,6 +315,8 @@ class _QuickRegisterScreenState extends State<QuickRegisterScreen> {
                                   ),
                                 ),
                                 const SizedBox(height: 24),
+                                _buildRegistrationTypeSelector(),
+                                const SizedBox(height: 16),
                                 _buildInputField(
                                   controller: _nameController,
                                   label: 'Full Name',
@@ -172,35 +349,57 @@ class _QuickRegisterScreenState extends State<QuickRegisterScreen> {
                                   },
                                 ),
                                 const SizedBox(height: 16),
+                                _buildIdTypeDropdown(),
+                                const SizedBox(height: 16),
                                 _buildInputField(
-                                  controller: _contactController,
-                                  label: 'Contact Number',
-                                  helperText: "Enter Contact Number",
-                                  icon: Icons.phone,
-                                  // maxLength: _selectedIdType == 'Aadhar' ? 12 : 10,
+                                  controller: _idController,
+                                  label: 'ID Number',
+                                  helperText: "Enter ID Number",
+                                  icon: Icons.credit_card,
                                   keyboardType: TextInputType.text,
                                   validator: (value) {
                                     if (value == null || value.trim().isEmpty) {
-                                      return 'Please enter Contact Number';
-                                    }else if(value.length != 10){
-                                      return 'Contact Number must be 10 digits';
+                                      return 'Please enter ID Number';
                                     }
                                     return null;
                                   },
                                 ),
-                                if (error != null) _buildErrorMessage(),
-                               
+                                if (_registrationType == 'group') ...[
                                   const SizedBox(height: 16),
                                   _buildInputField(
-                                  controller: _instituteController,
-                                  label: 'Institute',
-                                  helperText: "Enter Institute Name",
-                                  icon: Icons.school,
-                                ),
+                                    controller: _groupNameController,
+                                    label: 'Group Name',
+                                    helperText: "Enter Group Name",
+                                    icon: Icons.group,
+                                    validator: (value) {
+                                      if (_registrationType == 'group' && 
+                                          (value == null || value.trim().isEmpty)) {
+                                        return 'Please enter Group Name';
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                  const SizedBox(height: 16),
+                                  _buildInputField(
+                                    controller: _countController,
+                                    label: 'Count',
+                                    helperText: "Enter Count",
+                                    icon: Icons.numbers,
+                                    keyboardType: TextInputType.number,
+                                    validator: (value) {
+                                      if (_registrationType == 'group' && 
+                                          (value == null || value.trim().isEmpty)) {
+                                        return 'Please enter Count';
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                ],
+                                if (error != null) _buildErrorMessage(),
                                 const SizedBox(height: 16),
                                 _buildSubmitButton(cameraProvider),
                                 if (visitor_card_path.isNotEmpty)
-                                _buildVisitorCard(visitor_card_path),
+                                  _buildVisitorCard(visitor_card_path),
                               ],
                             ),
                           ),
@@ -221,40 +420,26 @@ class _QuickRegisterScreenState extends State<QuickRegisterScreen> {
     return ElevatedButton(
       onPressed: () async {
         try {
-          // Normalize the path (replace backslashes with forward slashes)
           final normalizedCardPath = visitorCardPath.replaceAll(r'\', '/');
-
-          // Create the download URL
           final downloadUrl = Uri.parse(
             '${ServerEndpoints.baseUrl}/users/download-visitor-card/?card_path=${Uri.encodeComponent(normalizedCardPath)}',
           );
-
-          // Get app user token for authentication
           final appUserManager = Provider.of<AppUserManager>(
             context,
             listen: false,
           );
           final token = await appUserManager.getAppUserToken();
-
-          // Make the HTTP request
           final response = await http.get(
             downloadUrl,
             headers: {'api-key': token},
           );
 
           if (response.statusCode == 200) {
-            // Get the application documents directory
             final downloadPath = await getApplicationDocumentsDirectory();
             final filePath = '${downloadPath.path}/visitor_card.png';
-
-            // Save the file
             final file = File(filePath);
             await file.writeAsBytes(response.bodyBytes);
-
-            // Open the file
             await OpenFile.open(filePath);
-
-            // Show success message
             Fluttertoast.showToast(
               msg: 'Visitor card downloaded successfully',
               backgroundColor: Colors.green,
@@ -287,74 +472,6 @@ class _QuickRegisterScreenState extends State<QuickRegisterScreen> {
     );
   }
 
-  Widget _buildHeaderCard() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.5),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey.shade200),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: const Color.fromARGB(
-                        255,
-                        10,
-                        128,
-                        120,
-                      ).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(
-                      Icons.person_add,
-                      color: Color.fromARGB(255, 10, 128, 120),
-                      size: 32,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Quick Registration',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF1A237E),
-                          ),
-                        ),
-                        SizedBox(height: 4),
-                        Text(
-                          'Register new guest quickly',
-                          style: TextStyle(
-                            color: Color.fromARGB(255, 10, 128, 120),
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildPhotoSection(CameraSettingsProvider cameraProvider) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -382,7 +499,7 @@ class _QuickRegisterScreenState extends State<QuickRegisterScreen> {
                   builder: (context) => const CameraCaptureScreen(),
                 ),
               );
-              setState(() {}); // Refresh UI after returning from camera screen
+              setState(() {});
             },
             borderRadius: BorderRadius.circular(12),
             child: Container(
@@ -508,7 +625,6 @@ class _QuickRegisterScreenState extends State<QuickRegisterScreen> {
     );
   }
 
-
   Widget _buildErrorMessage() {
     return Padding(
       padding: const EdgeInsets.only(top: 16),
@@ -554,20 +670,22 @@ class _QuickRegisterScreenState extends State<QuickRegisterScreen> {
   }
 
   Future<void> _handleSubmit(CameraSettingsProvider cameraProvider) async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
     setState(() {
       error = null;
       isLoading = true;
     });
 
     try {
-      // 1. Validate camera image
       if (cameraProvider.capturedImage == null) {
         throw Exception('Please capture a photo');
       }
 
-      showLoadingDialog(context, "Registering Student...");
+      showLoadingDialog(context, "Registering Guest...");
 
-      // 4. Get app user details
       final appUserManager = Provider.of<AppUserManager>(
         context,
         listen: false,
@@ -578,29 +696,25 @@ class _QuickRegisterScreenState extends State<QuickRegisterScreen> {
       }
       final appUserToken = await appUserManager.getAppUserToken();
 
-      // 5. Prepare request
       final request = http.MultipartRequest(
         'POST',
         Uri.parse('${ServerEndpoints.baseUrl}/users/create'),
       );
 
-      // Add form fields
-    //    name: str = Form(...),
-    // email: str = Form(...),
-    // image: UploadFile = File(...),
-    // institution_name: str = Form(...),
-    // contact_number: str = Form(...),
-      request.fields.addAll({
+      final fields = {
         'name': _nameController.text,
         'email': _emailController.text,
-        'contact_number': _contactController.text,
-        'institution_name': _instituteController.text,
-      });
+        'id_type': _selectedIdType,
+        'id': _idController.text,
+      };
 
-      // Add headers
+      if (_registrationType == 'group') {
+        fields['group_name'] = _groupNameController.text;
+        fields['count'] = _countController.text;
+      }
+
+      request.fields.addAll(fields);
       request.headers['api-key'] = appUserToken;
-
-      // Add image file
       request.files.add(
         await http.MultipartFile.fromPath(
           'image',
@@ -608,7 +722,6 @@ class _QuickRegisterScreenState extends State<QuickRegisterScreen> {
         ),
       );
 
-      // 6. Send request and handle response
       final response = await request.send();
       final responseData = await response.stream.bytesToString();
       final jsonResponse = json.decode(responseData);
@@ -621,13 +734,11 @@ class _QuickRegisterScreenState extends State<QuickRegisterScreen> {
           backgroundColor: Colors.green,
           textColor: Colors.white,
         );
-        // Navigator.pop(context); // Close registration screen
       } else {
         throw Exception(jsonResponse['message'] ?? 'Failed to register guest');
       }
     } catch (e) {
       if (!mounted) return;
-      // Navigator.pop(context); // Close any open dialogs
       Fluttertoast.showToast(
         msg: e.toString(),
         backgroundColor: Colors.red,
@@ -638,56 +749,54 @@ class _QuickRegisterScreenState extends State<QuickRegisterScreen> {
         setState(() {
           isLoading = false;
         });
-        Navigator.pop(context); // Close registration screen
+        Navigator.pop(context);
       }
     }
   }
-
 
   @override
   void dispose() {
     _nameController.dispose();
     _emailController.dispose();
-    _contactController.dispose();
-    _instituteController.dispose();
+    _idController.dispose();
+    _groupNameController.dispose();
+    _countController.dispose();
     super.dispose();
   }
 }
 
-
-  // Helper method for showing loading dialog
-  void showLoadingDialog(BuildContext context, String message) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder:
-          (context) => Material(
-            color: Colors.transparent,
-            child: Center(
-              child: Container(
-                width: 140,
-                padding: EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.shade200,
-                      blurRadius: 10,
-                      offset: Offset(0, 10),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    CircularProgressIndicator(),
-                    SizedBox(height: 16),
-                    Text(message, textAlign: TextAlign.center),
-                  ],
-                ),
+void showLoadingDialog(BuildContext context, String message) {
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder:
+        (context) => Material(
+          color: Colors.transparent,
+          child: Center(
+            child: Container(
+              width: 140,
+              padding: EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.shade200,
+                    blurRadius: 10,
+                    offset: Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text(message, textAlign: TextAlign.center),
+                ],
               ),
             ),
           ),
-    );
-  }
+        ),
+  );
+}

@@ -27,6 +27,25 @@
     },
     {
       "client_info": {
+        "mobilesdk_app_id": "1:199589356057:android:65db56ad529788e1568088",
+        "android_client_info": {
+          "package_name": "com.vmsbutu.abhayadhir"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA60C0V0IrG3-Eu9OY0Xxc_Bx36dLPPvwc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
         "mobilesdk_app_id": "1:199589356057:android:6122753c25b6b911568088",
         "android_client_info": {
           "package_name": "com.vmsbutu.aiems"

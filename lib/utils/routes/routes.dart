@@ -41,18 +41,15 @@ class AppRoutes {
       case FaceVerificationScreen.routeName:
         final args = settings.arguments as Map<String, dynamic>;
         return getPageTransition(FaceVerificationScreen(
-          userId: args['userId'] as int,
-          
+          userId: int.parse(args['userId'] as String),
         ), settings);
       case SuccessScreen.routeName:
         return MaterialPageRoute(builder: (_) => const SuccessScreen());
       case ViewGuestScreen.routeName:
-        // Cast arguments to Map<String, dynamic>
         final args = settings.arguments as Map<String, dynamic>;
         return MaterialPageRoute(
           builder: (_) => ViewGuestScreen(
-            userId: args['userId'] as int,
-            // isQuickRegister: args['isQuickRegister'] as bool,
+            userId: args['userId'] as String,
           ),
         );
       case FoodScreen.routeName:

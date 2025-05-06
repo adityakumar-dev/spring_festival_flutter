@@ -81,37 +81,25 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           fit: StackFit.expand,
           children: [
             Positioned(
-              
               bottom: 0,
               left: 0,
               right: 0,
-              child: 
-  
-            Container(
-            width: double.infinity,
-            height:70,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Color(0xFFFFCCCB),
-                    Color(0xFFFFCCCB).withOpacity(0.6),
-                    Color(0xFFF5F5F5).withOpacity(0.1)
-                  ],
-                  begin: Alignment.bottomCenter,
-                  end: Alignment.topCenter,
+              child: Container(
+                width: double.infinity,
+                height: 70,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Color(0xFFFFCCCB),
+                      Color(0xFFFFCCCB).withOpacity(0.6),
+                      Color(0xFFF5F5F5).withOpacity(0.1)
+                    ],
+                    begin: Alignment.bottomCenter,
+                    end: Alignment.topCenter,
+                  ),
                 ),
-            )),
+              ),
             ),
-            // Positioned(
-            //   bottom: -190,
-            //   left: 150,
-            //   right: -150,
-            //   child: Image.asset(
-            //     'assets/images/aipen.png',
-            //     height: MediaQuery.of(context).size.height * 0.4,
-            //     color: Color.fromARGB(255, 255, 165, 164),
-            //   ),
-            // ),
             if (isLoading)
               const Center(
                 child: CircularProgressIndicator(
@@ -142,23 +130,23 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                     ),
                     const SizedBox(height: 16),
 
-                    // Performance Overview Cards
+                    // Overall Statistics Cards
                     Row(
                       children: [
                         Expanded(
                           child: _buildStatCard(
-                            'Success Rate',
-                            '${analyticsData!['performance_metrics']['success_rate'].toStringAsFixed(1)}%',
-                            Icons.check_circle,
+                            'Total Entries',
+                            analyticsData!['overall_statistics']['total_entries'].toString(),
+                            Icons.people,
                             Color(0xFF1A237E),
                           ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: _buildStatCard(
-                            'Total Entries',
-                            analyticsData!['entry_statistics']['total_entries'].toString(),
-                            Icons.people,
+                            'Unique Users',
+                            analyticsData!['overall_statistics']['unique_users'].toString(),
+                            Icons.person_outline,
                             Color(0xFF1A237E),
                           ),
                         ),
@@ -166,22 +154,22 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                     ),
                     const SizedBox(height: 16),
 
-                    // Verification Rates Card
+                    // Overall Metrics Card
                     _buildAnalyticsCard(
-                      'Verification Rates',
+                      'Overall Metrics',
                       Column(
                         children: [
                           _buildStatRow(
-                            'Face Verification',
-                            '${analyticsData!['performance_metrics']['face_verification_rate'].toStringAsFixed(1)}%'
+                            'Average Duration',
+                            '${analyticsData!['overall_statistics']['average_duration_minutes'].toStringAsFixed(2)} min'
                           ),
                           _buildStatRow(
-                            'QR Verification',
-                            '${analyticsData!['performance_metrics']['qr_verification_rate'].toStringAsFixed(1)}%'
+                            'Completion Rate',
+                            '${analyticsData!['overall_statistics']['completion_rate'].toStringAsFixed(1)}%'
                           ),
                         ],
                       ),
-                      Icons.verified_user,
+                      Icons.analytics,
                     ),
                     const SizedBox(height: 16),
 
@@ -192,6 +180,22 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
+                            'Hourly Distribution',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          ...(analyticsData!['traffic_analysis']['hourly_distribution'] as Map<String, dynamic>)
+                              .entries
+                              .map((entry) => _buildTrafficPeriodCard(
+                                  '${entry.key}:00',
+                                  entry.value as int,
+                              ))
+                              .toList(),
+                          const SizedBox(height: 16),
+                          Text(
                             'Peak Hours',
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
@@ -199,60 +203,18 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                             ),
                           ),
                           const SizedBox(height: 8),
-                          ...analyticsData!['traffic_analysis']['busiest_periods']
-                              .map<Widget>((period) => _buildTrafficPeriodCard(
-                                  period[0] as String,
-                                  period[1] as int,
-                              )).toList(),
+                          Text(
+                            (analyticsData!['traffic_analysis']['peak_hours'] as List)
+                                .map((hour) => '$hour:00')
+                                .join(', '),
+                            style: const TextStyle(
+                              color: Color.fromARGB(255, 10, 128, 120),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                         ],
                       ),
                       Icons.timeline,
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Scan Efficiency Card
-                    _buildAnalyticsCard(
-                      'Scan Efficiency',
-                      Column(
-                        children: [
-                          _buildStatRow(
-                            'Average Completion Time',
-                            '${analyticsData!['scan_efficiency']['average_completion_time_minutes'].toStringAsFixed(1)} min'
-                          ),
-                          _buildStatRow(
-                            'Total Valid Scans',
-                            analyticsData!['scan_efficiency']['total_valid_scans'].toString()
-                          ),
-                          _buildStatRow(
-                            'Completion Rate',
-                            '${analyticsData!['scan_efficiency']['completion_rate'].toStringAsFixed(1)}%'
-                          ),
-                        ],
-                      ),
-                      Icons.speed,
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Entry Statistics Card
-                    _buildAnalyticsCard(
-                      'Entry Statistics',
-                      Column(
-                        children: [
-                          _buildStatRow(
-                            'Normal Entries',
-                            analyticsData!['entry_statistics']['entry_types']['normal'].toString()
-                          ),
-                          _buildStatRow(
-                            'Bypass Entries',
-                            analyticsData!['entry_statistics']['entry_types']['bypass'].toString()
-                          ),
-                          _buildStatRow(
-                            'Average Duration',
-                            '${analyticsData!['entry_statistics']['average_duration_minutes'].toStringAsFixed(1)} min'
-                          ),
-                        ],
-                      ),
-                      Icons.analytics,
                     ),
                     const SizedBox(height: 16),
 
@@ -261,9 +223,12 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                       'Daily Patterns',
                       Column(
                         children: [
-                          ...analyticsData!['entry_statistics']['daily_patterns']
+                          ...(analyticsData!['daily_patterns'] as Map<String, dynamic>)
                               .entries
-                              .map((entry) => _buildDailyPatternCard(entry.key, entry.value))
+                              .map((entry) => _buildDailyPatternCard(
+                                  entry.key,
+                                  entry.value as Map<String, dynamic>,
+                              ))
                               .toList(),
                         ],
                       ),
@@ -419,20 +384,12 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             stats['total_entries'].toString(),
           ),
           _buildStatRow(
-            'Successful Entries',
-            stats['successful_entries'].toString(),
-          ),
-          _buildStatRow(
             'Unique Users',
             stats['unique_users'].toString(),
           ),
           _buildStatRow(
-            'Group Entries',
-            stats['group_entries'].toString(),
-          ),
-          _buildStatRow(
-            'Success Rate',
-            '${stats['success_rate'].toStringAsFixed(1)}%',
+            'Average Duration',
+            '${stats['average_duration_minutes'].toStringAsFixed(2)} min',
           ),
         ],
       ),

@@ -1,3 +1,11 @@
+import java.util.Properties
+
+val keystoreProperties = Properties().apply {
+    val keystorePropertiesFile = rootProject.file("key.properties")
+    if (keystorePropertiesFile.exists()) {
+        keystorePropertiesFile.inputStream().use { this.load(it) }
+    }
+}
 plugins {
     id("com.android.application")
     // START: FlutterFire Configuration
@@ -9,7 +17,7 @@ plugins {
 }
 
 android {
-    namespace = "com.vmsbutu.aiems"
+    namespace = "com.vmsbutu.abhayadhir"
     compileSdk = 35
     ndkVersion = "27.0.12077973"
 
@@ -23,31 +31,29 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.vmsbutu.aiems"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
+        applicationId = "com.vmsbutu.abhayadhir"
         minSdk = 21
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 3
+        versionName = "1.2"
     }
     signingConfigs {
-        create("release") {
-            keyAlias = "foo"
-            keyPassword = "ak@2006@2021"
-            storeFile = file("foo.keystore")
-            storePassword = "ak@2006@2021"
-        }
+    create("release") {
+        keyAlias = keystoreProperties["keyAlias"] as String
+        keyPassword = keystoreProperties["keyPassword"] as String
+        storeFile = file(keystoreProperties["storeFile"] as String)
+        storePassword = keystoreProperties["storePassword"] as String
     }
-    buildTypes {
-        release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            // signingConfig = signingConfigs.getByName("debug")
-            signingConfig = signingConfigs.getByName("release")
-        }
+}
+
+buildTypes {
+    release {
+        signingConfig = signingConfigs.getByName("release")
+        isShrinkResources = false
+        isMinifyEnabled = false
     }
+}
+
 }
 
 flutter {

@@ -1,28 +1,26 @@
 class ServerEndpoints {
   // Base URL
-  static const String baseUrl = 'https://api.vmsbutu.it.com';
-  // static const String baseUrl = 'https://enabled-flowing-bedbug.ngrok-free.app';
-
+  static String baseUrl = 'https://api.vmsbutu.it.com';
 
   static String getGroupVerify() => '$baseUrl/face_recognition/group_entry';
   // User Management Endpoints
   static String createUser() => '$baseUrl/create_user';
   static String getUsers() => '$baseUrl/users/all';
-  static String getUserById(int userId) => '$baseUrl/users/$userId';
-  static String verifyUser() => '$baseUrl/app_users/verify';
-  static String registerUser() => '$baseUrl/app_users/create';
+  static String getUserById(String userId) => '$baseUrl/users/$userId';
+  static String verifyUser() => '$baseUrl/verify';
+  static String registerUser() => '$baseUrl/create';
   static String captureFace() => '$baseUrl/face_capture/capture';
-  static String listOfImages() => "$baseUrl/users/image/all";
+  static String listOfImages() => '$baseUrl/list-images';
   static String getImage() => '$baseUrl/users/image/';
   // QR Code Related Endpoints
-  static String getQrCode(int userId) => '$baseUrl/qr/$userId';
+  static String getQrCode() => '$baseUrl/qr-code';
   static String scanQr() => '$baseUrl/qr/scan_qr';
   static String getQrHistory(int userId) => '$baseUrl/qr_scans/$userId';
   
   // Face Recognition Endpoints
   static String logFaceRecognition() => '$baseUrl/face_recognition';
   static String getFaceRecognitionHistory(int userId) => '$baseUrl/face_recognition/$userId';
-  static String verifyFaceRecognition() => '$baseUrl/face_recognition/verify';
+  static String verifyFace() => '$baseUrl/verify-face';
   static String getFood() => '$baseUrl/food';
   static String scanFood() => '$baseUrl/food/add';
 
@@ -40,6 +38,9 @@ class ServerEndpoints {
   static String storeFaceImage() {
     return '$baseUrl/store-face-image';  // Adjust the endpoint path as needed
   }
+  static String getFoodAnalytics() => '$baseUrl/food-analytics';
+  static String login() => '$baseUrl/login';
+  static String register() => '$baseUrl/register';
   // static String quickRegister() {
   //   return '$baseUrl/quick-register';
   // }

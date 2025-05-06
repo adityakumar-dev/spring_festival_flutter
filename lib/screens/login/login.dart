@@ -225,7 +225,7 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(colors: [
-                    Colors.white, Colors.pink.shade100.withOpacity(0.1), Colors.pink.shade100
+                    Colors.white, Colors.pink.shade100.withOpacity(0.1).withOpacity(0.1), Colors.pink.shade100.withOpacity(0.1), Colors.pink.shade100
                   ], begin: Alignment.topLeft, end: Alignment.bottomRight)
                 ),
                 padding: const EdgeInsets.all(8.0),
@@ -251,39 +251,37 @@ class _LoginScreenState extends State<LoginScreen> {
                 children: [
                   const Spacer(flex: 2),
                   // Logo
-                  Column(
+                   Column(
                     children: [
-                     
-                      Text(
-                        'KAUTHIG 2025',
-                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+                      Image.asset(
+                        'assets/images/emblem.png',
+                        height: 150,
                       ),
                       const SizedBox(height: 10),
                       Text(
-                        "VEER MADHO SINGH BHANDARI",
-                        textAlign: TextAlign.center,
+                        'SPRING FESTIVAL 2025',
                         style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.grey[600],
-                          fontWeight: FontWeight.w600,
+                          fontSize: 20,
                         ),
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        "राजभवन उत्तराखंड",
+                        style: TextStyle(
+                            fontSize: 20, fontWeight: FontWeight.w600),
                       ),
                       Text(
-                        "UTTARAKHAND TECHNICAL UNIVERSITY",
-                        textAlign: TextAlign.center,
+                        "RAJ BHAWAN UTTARKHAND",
                         style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.grey[600],
-                          fontWeight: FontWeight.w600,
-                        ),
+                            fontSize: 20, fontWeight: FontWeight.w600),
                       ),
-                      const SizedBox(height: 50),
+                      const SizedBox(height: 20),
                     ],
                   ),
                   Text("Login with your credentials", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 10),
                   AppUserLogin(),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 10),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [

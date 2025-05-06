@@ -3,6 +3,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:provider/provider.dart';
 import 'package:spring_admin/apis/local_storage.dart';
 import 'package:spring_admin/providers/app_user_manager.dart';
+import 'package:spring_admin/screens/analytics.dart';
 import 'package:spring_admin/screens/food/food_screen.dart';
 import 'package:spring_admin/screens/home/dashboard_title.dart';
 import 'package:spring_admin/screens/help.dart';
@@ -49,22 +50,23 @@ class _HomeScreenState extends State<HomeScreen> {
             backgroundColor: Colors.transparent,
             elevation: 0,
             leading: Container(),
+            
             title: Row(
-              mainAxisAlignment: MainAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Image.asset(
-                  'assets/images/utu-logo.png',
+                  'assets/images/emblem.png',
                   height: 45,
-                  // color: const Color.fromARGB(255, 3, 7, 61),
+                  color: const Color.fromARGB(255, 3, 7, 61),
                 ),
                 const SizedBox(width: 12),
                 const Column(
                   children: [
                     Text(
-                      'KAUTHIG 2025',
+                      'SPRING FESTIVAL 2025',
                       style: TextStyle(
                         fontWeight: FontWeight.w900,
-                        fontSize: 16,
+                        fontSize: 12,
                         color: const Color(0xFF1A237E),
                       ),
                     ),
@@ -147,7 +149,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   alignment: Alignment.center,
                   padding: const EdgeInsets.symmetric(
                     horizontal: 16,
-                    vertical: 16,
+                    vertical: 8,
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(12),
@@ -303,35 +305,35 @@ class _HomeScreenState extends State<HomeScreen> {
                           if(Provider.of<AppUserManager>(context, listen: false).isScanCompleted ){
                            
                           if(Provider.of<AppUserManager>(context, listen: false).isBatchRequired == false){
-                            showDialog(context: context, builder: (context) => AlertDialog(
-                              title: Text('Batch Required'),
-                              content: Text('Please provide the batch or band.'),
-                              actions: [
-                                TextButton(onPressed: () => Navigator.pop(context), child: Text('OK')),
-                              ],
-                            ),);
+                            // showDialog(context: context, builder: (context) => AlertDialog(
+                            //   title: Text('Batch Required'),
+                            //   content: Text('Please provide the batch or band.'),
+                            //   actions: [
+                            //     TextButton(onPressed: () => Navigator.pop(context), child: Text('OK')),
+                            //   ],
+                            // ),);
                           }
                           }
 
                       },
                       ),
-                      // buildDashboardTile(
-                      //   context,
-                      //   'Departure',
-                      //   'Exit the Guest',
-                      //   Icons.exit_to_app_rounded,
-                      //   const Color.fromARGB(255, 52, 55, 95),
-                      //   () async {
-                      //     Navigator.push(
-                      //       context,
-                      //       MaterialPageRoute(
-                      //         builder:
-                      //             (context) =>
-                      //                 CustomScanner(operationType: 'exit'),
-                      //       ),
-                      //     );
-                      //   },
-                      // ),
+                      buildDashboardTile(
+                        context,
+                        'Departure',
+                        'Exit the Guest',
+                        Icons.exit_to_app_rounded,
+                        const Color.fromARGB(255, 52, 55, 95),
+                        () async {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder:
+                                  (context) =>
+                                      CustomScanner(operationType: 'exit'),
+                            ),
+                          );
+                        },
+                      ),
                       buildDashboardTile(
                         context,
                         'Quick Register',
@@ -343,35 +345,25 @@ class _HomeScreenState extends State<HomeScreen> {
                           QuickRegisterScreen.routeName,
                         ),
                       ),
-                      // buildDashboardTile(
-                      //   context,
-                      //   'Analytics',
-                      //   'View statistics',
-                      //   Icons.analytics_rounded,
-                      //   const Color.fromARGB(255, 52, 55, 95),
-                      //   () => Navigator.pushNamed(
-                      //     context,
-                      //     AnalyticsScreen.routeName,
-                      //   ),
-                      // ),
-            
                       buildDashboardTile(
                         context,
-                        'Food Entry',
-                        'Food Entry for Guests',
-                        Icons.restaurant_rounded,
+                        'Analytics',
+                        'View statistics',
+                        Icons.analytics_rounded,
                         const Color.fromARGB(255, 52, 55, 95),
                         () => Navigator.pushNamed(
                           context,
-                          FoodScreen.routeName,
+                          AnalyticsScreen.routeName,
                         ),
                       ),
+            buildDashboardTile(context, "Help", "Adhaydhir help center", Icons.help,                        const Color.fromARGB(255, 52, 55, 95) , () => Navigator.pushNamed(context, HelpScreen.routeName))
+                   ,  
                     ],
                   ),
                 ),
                 const Spacer(),
                 Container(
-                  padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
+                  padding: const EdgeInsets.symmetric( horizontal: 20),
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.6),
                     borderRadius: BorderRadius.circular(12),
@@ -473,7 +465,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ],
                       ),
-                      SizedBox(height: 10,),
+                      // SizedBox(height: 10,),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.end,
                 children: [

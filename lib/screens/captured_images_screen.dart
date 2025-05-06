@@ -8,8 +8,12 @@ import 'package:spring_admin/providers/app_user_manager.dart';
 import 'package:spring_admin/utils/constants/server_endpoints.dart';
 
 class CapturedImagesScreen extends StatefulWidget {
-  final int userId;
-  const CapturedImagesScreen({super.key, required this.userId});
+  final String userId;
+
+  const CapturedImagesScreen({
+    Key? key,
+    required this.userId,
+  }) : super(key: key);
 
   @override
   State<CapturedImagesScreen> createState() => _CapturedImagesScreenState();
@@ -29,7 +33,7 @@ class _CapturedImagesScreenState extends State<CapturedImagesScreen> {
   Future<void> _getListOfImages() async {
     try {
       final response = await http.MultipartRequest('GET', Uri.parse(ServerEndpoints.listOfImages()));
-      response.fields['user_id'] = widget.userId.toString();
+      response.fields['user_id'] = widget.userId;
       final responseData = await response.send();
       if (responseData.statusCode == 200) {
         final responseBody = await responseData.stream.bytesToString();
