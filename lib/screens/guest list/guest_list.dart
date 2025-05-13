@@ -264,7 +264,6 @@ class _GuestListsScreenState extends State<GuestListsScreen> {
 
       final client = http.Client();
       try {
-        Fluttertoast.showToast(msg: "Get : ${ServerEndpoints.getUsers()}");
         final response = await client.post(
           Uri.parse(ServerEndpoints.getUsers()),
           headers: {

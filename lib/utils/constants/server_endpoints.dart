@@ -4,16 +4,16 @@ class ServerEndpoints {
 
   static String getGroupVerify() => '$baseUrl/face_recognition/group_entry';
   // User Management Endpoints
-  static String createUser() => '$baseUrl/create_user';
+  // static String createUser() => '$baseUrl/app_user/create_user';
   static String getUsers() => '$baseUrl/users/all';
   static String getUserById(String userId) => '$baseUrl/users/$userId';
-  static String verifyUser() => '$baseUrl/verify';
-  static String registerUser() => '$baseUrl/create';
+  static String verifyUser() => '$baseUrl/app_users/verify';
+  static String registerUser() => '$baseUrl/app_users/create';
   static String captureFace() => '$baseUrl/face_capture/capture';
   static String listOfImages() => '$baseUrl/list-images';
   static String getImage() => '$baseUrl/users/image/';
   // QR Code Related Endpoints
-  static String getQrCode() => '$baseUrl/qr-code';
+  static String getQrCode() => '$baseUrl/qr/qr-code';
   static String scanQr() => '$baseUrl/qr/scan_qr';
   static String getQrHistory(int userId) => '$baseUrl/qr_scans/$userId';
   
