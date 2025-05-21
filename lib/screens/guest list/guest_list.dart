@@ -159,16 +159,20 @@ class _GuestListsScreenState extends State<GuestListsScreen> {
 
     final client = http.Client();
     try {
-      final response = await client.post(
-        Uri.parse(ServerEndpoints.getUsers()),
+      final queryParams = {
+        'page': (_currentPage + 1).toString(),
+        'per_page': _pageSize.toString(),
+      };
+      
+      final uri = Uri.parse(ServerEndpoints.getUsers()).replace(
+        queryParameters: queryParams,
+      );
+
+      final response = await client.get(
+        uri,
         headers: {
-          'Content-Type': 'application/json',
           'Accept': 'application/json',
         },
-        body: json.encode({
-          'page': _currentPage + 1,
-          'per_page': _pageSize,
-        }),
       ).timeout(
         const Duration(seconds: 30),
         onTimeout: () {
@@ -264,16 +268,20 @@ class _GuestListsScreenState extends State<GuestListsScreen> {
 
       final client = http.Client();
       try {
-        final response = await client.post(
-          Uri.parse(ServerEndpoints.getUsers()),
+        final queryParams = {
+          'page': '1',
+          'per_page': _pageSize.toString(),
+        };
+        
+        final uri = Uri.parse(ServerEndpoints.getUsers()).replace(
+          queryParameters: queryParams,
+        );
+
+        final response = await client.get(
+          uri,
           headers: {
-            'Content-Type': 'application/json',
             'Accept': 'application/json',
           },
-          body: json.encode({
-            'page': 1,
-            'per_page': _pageSize,
-          }),
         ).timeout(
           const Duration(seconds: 10),
           onTimeout: () {

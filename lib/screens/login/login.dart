@@ -239,72 +239,74 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
             // Main Content
-            Container(
-              height: MediaQuery.of(context).size.height,
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 30),
-              decoration: BoxDecoration(
-                // color: Colors.white,
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Spacer(flex: 2),
-                  // Logo
-                   Column(
-                    children: [
-                      Image.asset(
-                        'assets/images/emblem.png',
-                        height: 150,
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        'SPRING FESTIVAL 2025',
-                        style: TextStyle(
-                          fontSize: 20,
+            SingleChildScrollView(
+              child: Container(
+                height: MediaQuery.of(context).size.height,
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 30),
+                decoration: BoxDecoration(
+                  // color: Colors.white,
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Spacer(flex: 2),
+                    // Logo
+                     Column(
+                      children: [
+                        Image.asset(
+                          'assets/images/emblem.png',
+                          height: 120,
                         ),
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        "राजभवन उत्तराखंड",
-                        style: TextStyle(
-                            fontSize: 20, fontWeight: FontWeight.w600),
-                      ),
-                      Text(
-                        "RAJ BHAWAN UTTARKHAND",
-                        style: TextStyle(
-                            fontSize: 20, fontWeight: FontWeight.w600),
-                      ),
-                      const SizedBox(height: 20),
-                    ],
-                  ),
-                  Text("Login with your credentials", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),),
-                  const SizedBox(height: 10),
-                  AppUserLogin(),
-                  const SizedBox(height: 10),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text("Not a member? ", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),),
-                      TextButton(onPressed: (){
-                        Navigator.pushNamed(context, RegisterScreen.routeName);
-                      }, child: Text("Register", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.blue),)),
-                    ],
-                  ),
-                  const Spacer(flex: 2),
-                  // Powered by text
-                  Column(
-                    children: [
-                      Text(
-                        'Powered by',
-                        style: TextStyle(color: Colors.grey[600], fontSize: 14),
-                      ),
-                      const SizedBox(height: 10),
-                      Image.asset('assets/images/utu-logo.png', height: 80),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                ],
+                        const SizedBox(height: 10),
+                        Text(
+                          'SPRING FESTIVAL 2025',
+                          style: TextStyle(
+                            fontSize: 20,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          "राजभवन उत्तराखंड",
+                          style: TextStyle(
+                              fontSize: 20, fontWeight: FontWeight.w600),
+                        ),
+                        Text(
+                          "RAJ BHAWAN UTTARKHAND",
+                          style: TextStyle(
+                              fontSize: 20, fontWeight: FontWeight.w600),
+                        ),
+                        const SizedBox(height: 20),
+                      ],
+                    ),
+                    Text("Login with your credentials", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),),
+                    const SizedBox(height: 10),
+                    AppUserLogin(),
+                    const SizedBox(height: 10),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text("Not a member? ", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),),
+                        TextButton(onPressed: (){
+                          Navigator.pushNamed(context, RegisterScreen.routeName);
+                        }, child: Text("Register", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.blue),)),
+                      ],
+                    ),
+                    const Spacer(flex: 2),
+                    // Powered by text
+                    Column(
+                      children: [
+                        Text(
+                          'Powered by',
+                          style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                        ),
+                        const SizedBox(height: 10),
+                        Image.asset('assets/images/utu-logo.png', height: 80),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                  ],
+                ),
               ),
             ),
           ],
